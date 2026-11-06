@@ -1,8 +1,8 @@
 
 /* =========================================================
    AI VIDEO STUDIO PRO
-   Text-to-Video + AI Horde Image Generation
-   Manual image upload + animated scene export
+   Smart Script Analysis + AI Horde Image Generation
+   Scene continuity + Retry + Manual Upload + Video Export
    ========================================================= */
 
 (() => {
@@ -20,10 +20,14 @@
 
   if (!script || !list || !generate || !exportBtn) return;
 
-  // AI Horde configuration
   const HORDE_API = 'https://aihorde.net/api/v2';
   const HORDE_KEY = '0000000000';
-  const CLIENT_AGENT = 'AI-Video-Studio-Pro:1.0';
+  const CLIENT_AGENT = 'AI-Video-Studio-Pro:2.0';
+
+  const MAX_SCENES = 12;
+  const MAX_RETRIES = 3;
+  const POLL_INTERVAL = 3000;
+  const MAX_WAIT = 180;
 
   let scenes = [];
   let outputUrl = null;
@@ -36,11 +40,6 @@
   const wait = ms =>
     new Promise(resolve => setTimeout(resolve, ms));
 
-  const ratioSize = ratio =>
-    ratio === '9:16' ? [720, 1280] :
-    ratio === '1:1' ? [900, 900] :
-    [1280, 720];
-
   const esc = value =>
     String(value).replace(/[&<>"']/g, char => ({
       '&': '&amp;',
@@ -50,24 +49,200 @@
       "'": '&#39;'
     }[char]));
 
-  function makeImagePrompt(text) {
-    return [
-      'Cinematic photorealistic movie still.',
-      text,
-      'Professional film photography.',
-      'Beautiful detailed environment.',
-      'Natural realistic lighting.',
-      'Wide cinematic composition.',
-      'High quality, realistic colors.',
-      'No text, no letters, no watermark.'
-    ].join(' ');
+  function ratioSize() {
+    const ratio = $('videoRatio')?.value;
+
+    if (ratio === '9:16') return [512, 768];
+    if (ratio === '1:1') return [640, 640];
+
+    return [768, 512];
   }
+
+  // -------------------------------------------------------
+  // 1. SMART SCRIPT ANALYSIS
+  // -------------------------------------------------------
+
+  function cleanText(text) {
+    return String(text || '')
+      .replace(/\r/g, '\n')
+      .replace(/[ \t]+/g, ' ')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+  }
+
+  function splitSentences(text) {
+    return text
+      .split(/(?<=[.!؟?])\s+/u)
+      .map(part => part.trim())
+      .filter(Boolean);
+  }
+
+  function isHeading(text) {
+    const value = text.trim();
+
+    return (
+      value.length < 55 &&
+      !/[.!؟?،؛]/.test(value) &&
+      /^(المشهد|مشهد|scene|chapter|الفصل)\s*[\d٠-٩0-9]*/i.test(value)
+    );
+  }
+
+  function buildSceneGroups(rawText) {
+    const text = cleanText(rawText);
+
+    if (!text) return [];
+
+    // First, preserve user-defined paragraphs.
+    const paragraphs = text
+      .split(/\n\s*\n/)
+      .map(part => part.trim())
+      .filter(Boolean);
+
+    let groups = [];
+
+    for (const paragraph of paragraphs) {
+      if (isHeading(paragraph)) continue;
+
+      const sentences = splitSentences(paragraph);
+
+      // Short paragraphs are kept together as one event.
+      if (
+        sentences.length <= 2 &&
+        paragraph.length <= 550
+      ) {
+        groups.push(paragraph);
+        continue;
+      }
+
+      // Long paragraphs are grouped into related sentence pairs.
+      let current = [];
+
+      for (const sentence of sentences) {
+        current.push(sentence);
+
+        const combined = current.join(' ');
+
+        if (
+          current.length >= 2 ||
+          combined.length >= 420
+        ) {
+          groups.push(combined);
+          current = [];
+        }
+      }
+
+      if (current.length) {
+        groups.push(current.join(' '));
+      }
+    }
+
+    // Merge very short fragments with their neighbors.
+    const merged = [];
+
+    for (const item of groups) {
+      if (
+        merged.length &&
+        item.length < 45 &&
+        merged[merged.length - 1].length < 350
+      ) {
+        merged[merged.length - 1] += ' ' + item;
+      } else {
+        merged.push(item);
+      }
+    }
+
+    // Do not silently discard the rest of the script.
+    if (merged.length > MAX_SCENES) {
+      const firstScenes = merged.slice(0, MAX_SCENES - 1);
+      const remaining = merged.slice(MAX_SCENES - 1);
+
+      firstScenes.push(remaining.join(' '));
+
+      return firstScenes;
+    }
+
+    return merged;
+  }
+
+  // -------------------------------------------------------
+  // 2. SCENE VISUAL ANALYSIS
+  // -------------------------------------------------------
+
+  function analyzeScene(text, index) {
+    const source = cleanText(text);
+
+    return {
+      number: index + 1,
+      source,
+      visualDescription: source,
+      prompt: makeImagePrompt(source, index)
+    };
+  }
+
+  function makeImagePrompt(text, index) {
+    const [width, height] = ratioSize();
+
+    const orientation =
+      width > height
+        ? 'landscape cinematic composition'
+        : width === height
+          ? 'square balanced composition'
+          : 'vertical portrait composition';
+
+    return [
+      'Create ONE single cinematic photorealistic movie frame.',
+      '',
+      'STRICT SCENE ACCURACY:',
+      'Illustrate only the event described in the source scene.',
+      'Understand the complete meaning of the scene before drawing.',
+      'Identify the actual characters, their actions, objects, location,',
+      'environment, weather, and time of day from the source.',
+      'Show the most important visual moment of this exact event.',
+      'The main subject and action must be immediately recognizable.',
+      'Do not replace the described action with a generic scene.',
+      'Do not invent unrelated characters, objects, or locations.',
+      'Do not omit important details explicitly mentioned.',
+      '',
+      'CHARACTER CONSISTENCY:',
+      'When a character appears, keep a coherent realistic appearance.',
+      'Preserve apparent age, clothing, hairstyle, and visual identity',
+      'when these details are stated or established by the scene.',
+      'Do not randomly change the character between scenes.',
+      '',
+      'COMPOSITION:',
+      orientation + '.',
+      'Professional movie production photography.',
+      'Realistic anatomy and natural human expressions.',
+      'Clear foreground, middle ground and background.',
+      'Natural cinematic lighting matching the described situation.',
+      'Detailed environment and realistic materials.',
+      'Professional camera framing.',
+      '',
+      'IMPORTANT:',
+      'No captions, no subtitles, no typography,',
+      'no written words, no logos, no watermarks.',
+      'No collage, no storyboard, no split screen.',
+      'One image showing one specific moment only.',
+      '',
+      'SOURCE SCENE ' + (index + 1) + ':',
+      '"""',
+      text,
+      '"""',
+      '',
+      'Translate the meaning of the source into a faithful visual image.',
+      'Visual accuracy is more important than artistic decoration.'
+    ].join('\n');
+  }
+
+  // -------------------------------------------------------
+  // 3. AI HORDE API
+  // -------------------------------------------------------
 
   async function apiRequest(url, options = {}) {
     const response = await fetch(url, {
       ...options,
       headers: {
-        'apikey': HORDE_KEY,
+        apikey: HORDE_KEY,
         'Client-Agent': CLIENT_AGENT,
         ...(options.headers || {})
       }
@@ -76,18 +251,16 @@
     const body = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      const message =
+      throw new Error(
         body.message ||
         body.error ||
-        `HTTP ${response.status}`;
-
-      throw new Error(message);
+        `HTTP ${response.status}`
+      );
     }
 
     return body;
   }
 
-  // Convert AI Horde image result into a local browser image.
   async function createLocalImage(imageData) {
     if (!imageData || typeof imageData !== 'string') {
       throw new Error('الخدمة لم ترجع بيانات الصورة.');
@@ -95,29 +268,39 @@
 
     let blob;
 
-    // Base64 or data URL response
-    if (
-      imageData.startsWith('data:image/') ||
-      /^[A-Za-z0-9+/]+=*$/.test(imageData)
-    ) {
-      const dataUrl = imageData.startsWith('data:')
-        ? imageData
-        : `data:image/webp;base64,${imageData}`;
+    const normalized = imageData.trim();
 
-      const response = await fetch(dataUrl);
+    if (normalized.startsWith('data:image/')) {
+      const response = await fetch(normalized);
       blob = await response.blob();
+
+    } else if (
+      /^[A-Za-z0-9+/=\s]+$/.test(normalized) &&
+      normalized.length > 100
+    ) {
+      const base64 = normalized.replace(/\s/g, '');
+      const binary = atob(base64);
+      const bytes = new Uint8Array(binary.length);
+
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+
+      blob = new Blob([bytes], {
+        type: 'image/webp'
+      });
+
     } else {
-      // Remote image URL
       let imageAddress;
 
       try {
-        imageAddress = new URL(imageData);
+        imageAddress = new URL(normalized);
       } catch {
         throw new Error('رابط الصورة غير صالح.');
       }
 
-      if (!['https:', 'http:'].includes(imageAddress.protocol)) {
-        throw new Error('نوع رابط الصورة غير مدعوم.');
+      if (imageAddress.protocol !== 'https:') {
+        throw new Error('رابط الصورة غير آمن.');
       }
 
       const response = await fetch(imageAddress.href, {
@@ -143,9 +326,9 @@
     try {
       await new Promise((resolve, reject) => {
         img.onload = resolve;
-        img.onerror = () => reject(
-          new Error('تعذر فتح الصورة الناتجة.')
-        );
+        img.onerror = () =>
+          reject(new Error('تعذر فتح الصورة الناتجة.'));
+
         img.src = localUrl;
       });
 
@@ -157,14 +340,16 @@
         image: img,
         url: localUrl
       };
+
     } catch (error) {
       URL.revokeObjectURL(localUrl);
       throw error;
     }
   }
 
-  // Submit image generation and wait for AI Horde.
-  async function loadSceneImage(scene, index) {
+  async function requestHordeImage(scene, index) {
+    const [width, height] = ratioSize();
+
     const request = await apiRequest(
       `${HORDE_API}/generate/async`,
       {
@@ -173,12 +358,12 @@
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          prompt: makeImagePrompt(scene.text),
+          prompt: scene.prompt,
 
           params: {
-            width: 768,
-            height: 512,
-            steps: 20,
+            width,
+            height,
+            steps: 25,
             n: 1,
             cfg_scale: 7,
             sampler_name: 'k_euler',
@@ -202,9 +387,8 @@
     const jobId = request.id;
     let completed = false;
 
-    // AI Horde requests may wait in a community queue.
-    for (let attempt = 0; attempt < 180; attempt++) {
-      await wait(3000);
+    for (let attempt = 0; attempt < MAX_WAIT; attempt++) {
+      await wait(POLL_INTERVAL);
 
       const check = await apiRequest(
         `${HORDE_API}/generate/check/${jobId}`
@@ -215,7 +399,7 @@
       }
 
       say(
-        `المشهد ${index + 1}: جاري انتظار الصورة... ` +
+        `المشهد ${index + 1}: انتظار الصورة... ` +
         `الطلبات المنتظرة: ${check.waiting ?? 0}`
       );
 
@@ -226,9 +410,7 @@
     }
 
     if (!completed) {
-      throw new Error(
-        'انتهت مهلة الانتظار. جرّب مرة أخرى لاحقاً.'
-      );
+      throw new Error('انتهت مهلة انتظار الصورة.');
     }
 
     const result = await apiRequest(
@@ -238,25 +420,60 @@
     const generated = result.generations?.[0];
 
     if (!generated?.img) {
-      throw new Error(
-        'اكتمل الطلب ولكن لم يتم العثور على الصورة.'
-      );
+      throw new Error('لم يتم العثور على الصورة الناتجة.');
     }
 
-    const localImage = await createLocalImage(generated.img);
-
-    // Clean up previous generated image if any.
-    if (scene.imageUrl) {
-      URL.revokeObjectURL(scene.imageUrl);
-    }
-
-    scene.image = localImage.image;
-    scene.imageUrl = localImage.url;
-
-    return scene.image;
+    return await createLocalImage(generated.img);
   }
 
-  // Display scene cards.
+  async function loadSceneImage(scene, index) {
+    let lastError;
+
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        say(
+          `المشهد ${index + 1}: محاولة ${attempt} من ${MAX_RETRIES}...`
+        );
+
+        const localImage = await requestHordeImage(
+          scene,
+          index
+        );
+
+        if (scene.imageUrl) {
+          URL.revokeObjectURL(scene.imageUrl);
+        }
+
+        scene.image = localImage.image;
+        scene.imageUrl = localImage.url;
+
+        return scene.image;
+
+      } catch (error) {
+        lastError = error;
+
+        console.error(
+          `Scene ${index + 1}, attempt ${attempt}:`,
+          error
+        );
+
+        if (attempt < MAX_RETRIES) {
+          say(
+            `المشهد ${index + 1}: فشل مؤقت، إعادة المحاولة...`
+          );
+
+          await wait(2000);
+        }
+      }
+    }
+
+    throw lastError || new Error('فشل توليد الصورة.');
+  }
+
+  // -------------------------------------------------------
+  // 4. DISPLAY SCENE CARDS
+  // -------------------------------------------------------
+
   function renderCards() {
     list.innerHTML = '';
 
@@ -353,7 +570,10 @@
     );
   }
 
-  // Generate all scenes and images.
+  // -------------------------------------------------------
+  // 5. GENERATE SCENES
+  // -------------------------------------------------------
+
   generate.addEventListener('click', async () => {
     const raw = script.value.trim();
 
@@ -374,26 +594,34 @@
       }
     });
 
-    scenes = raw
-      .split(/\n\s*\n|(?<=[.!؟])\s+/u)
-      .map(text => text.trim())
-      .filter(Boolean)
-      .slice(0, 12)
-      .map(text => ({
-        text,
-        image: null,
-        imageUrl: null
-      }));
+    scenes = [];
 
-    if (!scenes.length) {
-      scenes = [{
-        text: raw,
-        image: null,
-        imageUrl: null
-      }];
+    const groups = buildSceneGroups(raw);
+
+    if (!groups.length) {
+      say('ما قدرناش نحللو السكريبت.');
+      busy = false;
+      generate.disabled = false;
+      return;
     }
 
+    scenes = groups.map((text, index) => {
+      const analysis = analyzeScene(text, index);
+
+      return {
+        text,
+        visualDescription: analysis.visualDescription,
+        prompt: analysis.prompt,
+        image: null,
+        imageUrl: null
+      };
+    });
+
     renderCards();
+
+    say(
+      `تم تحليل السكريبت إلى ${scenes.length} مشهد.`
+    );
 
     let success = 0;
     let failed = 0;
@@ -401,13 +629,14 @@
     try {
       for (let i = 0; i < scenes.length; i++) {
         const card = list.children[i];
+
         const imageStatus = card?.querySelector(
           '.scene-image-status'
         );
 
         if (imageStatus) {
           imageStatus.textContent =
-            'جاري إرسال طلب إنشاء الصورة...';
+            'جاري تحليل وصف المشهد وإرسال طلب الصورة...';
         }
 
         say(
@@ -433,10 +662,7 @@
           updateExportButton();
 
         } catch (error) {
-          console.error(
-            `Scene ${i + 1} image error:`,
-            error
-          );
+          console.error(`Scene ${i + 1}:`, error);
 
           if (imageStatus) {
             imageStatus.textContent =
@@ -450,8 +676,8 @@
       updateExportButton();
 
       say(
-        `انتهى العمل: ${success} صورة ناجحة، ` +
-        `${failed} صور فاشلة من أصل ${scenes.length}.`
+        `انتهى التحليل: ${success} صورة ناجحة، ` +
+        `${failed} فاشلة من أصل ${scenes.length}.`
       );
 
     } finally {
@@ -461,7 +687,10 @@
     }
   });
 
-  // Clear project.
+  // -------------------------------------------------------
+  // 6. CLEAR PROJECT
+  // -------------------------------------------------------
+
   clear?.addEventListener('click', () => {
     if (busy) {
       say('انتظر حتى تنتهي عملية إنشاء الصور.');
@@ -494,7 +723,10 @@
     say('تم مسح السكريبت والمشاهد.');
   });
 
-  // Draw image and text into the video canvas.
+  // -------------------------------------------------------
+  // 7. DRAW VIDEO SCENE
+  // -------------------------------------------------------
+
   function drawScene(ctx, canvas, scene, time, index, total) {
     const width = canvas.width;
     const height = canvas.height;
@@ -527,6 +759,7 @@
         imageWidth,
         imageHeight
       );
+
     } else {
       const gradient = ctx.createLinearGradient(
         0, 0, width, height
@@ -607,7 +840,10 @@
     );
   }
 
-  // Export video.
+  // -------------------------------------------------------
+  // 8. EXPORT VIDEO
+  // -------------------------------------------------------
+
   exportBtn.addEventListener('click', async () => {
     if (busy || !scenes.length) return;
 
@@ -637,9 +873,7 @@
     let recorder;
 
     try {
-      const [width, height] = ratioSize(
-        $('videoRatio')?.value
-      );
+      const [width, height] = ratioSize();
 
       const canvas = document.createElement('canvas');
       canvas.width = width;
@@ -675,17 +909,14 @@
       const chunks = [];
 
       recorder.ondataavailable = event => {
-        if (event.data.size) {
-          chunks.push(event.data);
-        }
+        if (event.data.size) chunks.push(event.data);
       };
 
       const stopped = new Promise((resolve, reject) => {
         recorder.onstop = resolve;
 
-        recorder.onerror = () => {
+        recorder.onerror = () =>
           reject(new Error('تعذر تسجيل الفيديو.'));
-        };
       });
 
       recorder.start(500);
@@ -758,9 +989,7 @@
         })
       );
 
-      say(
-        'تم إنشاء الفيديو بنجاح. حمل الفيديو من الرابط.'
-      );
+      say('تم إنشاء الفيديو بنجاح. حمل الفيديو من الرابط.');
 
     } catch (error) {
       console.error(error);
@@ -779,7 +1008,10 @@
     }
   });
 
-  // Cleanup temporary resources.
+  // -------------------------------------------------------
+  // 9. CLEANUP
+  // -------------------------------------------------------
+
   window.addEventListener('beforeunload', () => {
     scenes.forEach(scene => {
       if (scene.imageUrl) {
