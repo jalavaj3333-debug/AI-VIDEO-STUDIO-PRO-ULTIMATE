@@ -53,6 +53,13 @@
       url: "https://elevenlabs.io/"
     },
     {
+      name: "Poe AI Assistant",
+      category: "assistant",
+      description: "إنشاء Prompts وسيناريوهات ووصف حركة الأشخاص والعناصر.",
+      access: "نقاط مجانية محدودة حسب الحساب",
+      url: "https://poe.com/"
+    },
+    {
       name: "There's An AI For That",
       category: "directory",
       description: "البحث عن أدوات الذكاء الاصطناعي.",
@@ -61,8 +68,19 @@
     }
   ];
 
+  function escapeHTML(value) {
+    return String(value).replace(/[&<>"']/g, char => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    })[char]);
+  }
+
   function initAIHub() {
     const root = document.getElementById("aiToolsHub");
+
     if (!root || root.dataset.initialized === "true") return;
 
     root.dataset.initialized = "true";
@@ -90,6 +108,7 @@
           <button data-category="image">🖼️ الصور</button>
           <button data-category="video">🎬 الفيديو</button>
           <button data-category="audio">🎙️ الصوت</button>
+          <button data-category="assistant">🤖 المساعدات الذكية</button>
           <button data-category="directory">📚 الأدلة</button>
         </nav>
 
@@ -110,6 +129,14 @@
 
     let category = "all";
 
+    const icons = {
+      image: "🖼️",
+      video: "🎬",
+      audio: "🎙️",
+      assistant: "🤖",
+      directory: "📚"
+    };
+
     function render() {
       const query = search.value.trim().toLowerCase();
 
@@ -128,19 +155,19 @@
       grid.innerHTML = results.map(tool => `
         <article class="ath-card">
           <div class="ath-card-icon">
-            ${{
-              image: "🖼️",
-              video: "🎬",
-              audio: "🎙️",
-              directory: "📚"
-            }[tool.category]}
+            ${icons[tool.category] || "✨"}
           </div>
+
           <h3>${escapeHTML(tool.name)}</h3>
           <p>${escapeHTML(tool.description)}</p>
-          <span class="ath-access">${escapeHTML(tool.access)}</span>
+
+          <span class="ath-access">
+            ${escapeHTML(tool.access)}
+          </span>
+
           <a
             class="ath-open"
-            href="${tool.url}"
+            href="${escapeHTML(tool.url)}"
             target="_blank"
             rel="noopener noreferrer"
           >Open Tool ↗</a>
@@ -151,16 +178,6 @@
         grid.innerHTML =
           '<p class="ath-empty">ما لقينا حتى أداة بهاد البحث.</p>';
       }
-    }
-
-    function escapeHTML(value) {
-      return String(value).replace(/[&<>"']/g, char => ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#39;"
-      })[char]);
     }
 
     search.addEventListener("input", render);
@@ -187,4 +204,3 @@
     initAIHub();
   }
 })();
-
