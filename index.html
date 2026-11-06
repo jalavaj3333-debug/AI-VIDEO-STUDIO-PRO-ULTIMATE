@@ -62,9 +62,13 @@
                 <span>♫</span> Audio Studio Pro
             </a>
 
-            <!-- NEW AI TOOLS HUB -->
             <a href="#ai-tools-hub" class="menu-item">
                 <span>✦</span> AI Tools Hub
+            </a>
+
+            <!-- AI PROMPT BUILDER -->
+            <a href="#prompt-builder" class="menu-item">
+                <span>🤖</span> AI Prompt Builder
             </a>
 
             <a href="#projects" class="menu-item">
@@ -564,9 +568,8 @@
             </div>
         </section>
 
-        <!-- NEW AI TOOLS HUB -->
+        <!-- AI TOOLS HUB -->
         <section class="section" id="ai-tools-hub">
-
             <div id="aiToolsHub">
                 <div class="section-heading">
                     <div>
@@ -577,7 +580,102 @@
 
                 <p>جاري تحميل أدوات الذكاء الاصطناعي...</p>
             </div>
+        </section>
 
+        <!-- AI PROMPT BUILDER PRO -->
+        <section class="section" id="prompt-builder">
+            <div class="section-heading">
+                <div>
+                    <h2>🤖 AI Prompt Builder Pro</h2>
+                    <p>أنشئ Prompts احترافية للفيديوهات بالذكاء الاصطناعي.</p>
+                </div>
+            </div>
+
+            <div class="creator-panel">
+
+                <label for="promptSubject">وصف المشهد</label>
+                <textarea id="promptSubject" rows="3"
+                    placeholder="مثلاً: فارس يمشي وسط مدينة مستقبلية..."></textarea>
+
+                <div class="creator-controls">
+
+                    <label>نوع المشهد
+                        <select id="promptScene">
+                            <option value="cinematic">سينمائي</option>
+                            <option value="fantasy">خيالي</option>
+                            <option value="nature">طبيعة</option>
+                            <option value="underwater">عالم تحت الماء</option>
+                            <option value="city">مدينة مستقبلية</option>
+                            <option value="commercial">إعلان تجاري</option>
+                        </select>
+                    </label>
+
+                    <label>حركة الأشخاص والعناصر
+                        <select id="promptMotion">
+                            <option value="natural">حركة طبيعية</option>
+                            <option value="walking">المشي والحركة</option>
+                            <option value="hand">حركة اليدين والرأس</option>
+                            <option value="environment">حركة البيئة والماء والغيوم</option>
+                            <option value="action">حركة ديناميكية</option>
+                        </select>
+                    </label>
+
+                    <label>حركة الكاميرا
+                        <select id="promptCamera">
+                            <option value="slow cinematic camera movement">حركة سينمائية بطيئة</option>
+                            <option value="camera zoom in">تقريب</option>
+                            <option value="camera zoom out">إبعاد</option>
+                            <option value="smooth tracking shot">تتبع الحركة</option>
+                            <option value="drone aerial shot">تصوير جوي</option>
+                        </select>
+                    </label>
+
+                    <label>الستايل
+                        <select id="promptStyle">
+                            <option value="ultra realistic cinematic">واقعي سينمائي</option>
+                            <option value="3D animation">3D Animation</option>
+                            <option value="fantasy movie style">Fantasy</option>
+                            <option value="luxury commercial">إشهاري فاخر</option>
+                            <option value="documentary style">وثائقي</option>
+                        </select>
+                    </label>
+
+                    <label>المقاس
+                        <select id="promptRatio">
+                            <option value="16:9">16:9 أفقي</option>
+                            <option value="9:16">9:16 عمودي</option>
+                            <option value="1:1">1:1 مربع</option>
+                        </select>
+                    </label>
+
+                </div>
+
+                <div class="creator-actions">
+                    <button id="generatePrompt" type="button">
+                        ✨ إنشاء Prompt
+                    </button>
+
+                    <button id="clearPrompt" type="button" class="secondary-btn">
+                        مسح
+                    </button>
+                </div>
+
+                <label for="generatedPrompt">Prompt الناتج</label>
+
+                <textarea id="generatedPrompt" rows="12"
+                    placeholder="النتيجة ستظهر هنا..." readonly></textarea>
+
+                <div class="creator-actions">
+                    <button id="copyPrompt" type="button">
+                        📋 نسخ Prompt
+                    </button>
+                </div>
+
+                <p id="promptStatus" class="tool-status" aria-live="polite">
+                    اكتب وصف المشهد للبدء.
+                </p>
+
+            </div>
         </section>
 
         <!-- PROJECTS -->
@@ -613,9 +711,10 @@
 <script src="auto-montage.js"></script>
 <script src="text-to-video.js"></script>
 <script src="image-to-video.js"></script>
-
-<!-- AI TOOLS HUB -->
 <script src="ai-tools-hub.js"></script>
+
+<!-- AI PROMPT BUILDER -->
+<script src="prompt-builder.js"></script>
 
 </body>
 </html>
