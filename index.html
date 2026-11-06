@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -14,12 +13,9 @@
 </head>
 
 <body>
-
 <div class="app-container">
 
-    <!-- SIDEBAR -->
     <aside class="sidebar">
-
         <div class="logo">
             <span class="logo-icon">✦</span>
             <div>
@@ -49,52 +45,35 @@
                 <p>استمتع بأدوات الاستوديو المتاحة مجاناً.</p>
             </div>
         </div>
-
     </aside>
 
-    <!-- MAIN CONTENT -->
     <main class="main-content">
 
-        <!-- TOPBAR -->
         <header class="topbar">
             <button class="mobile-menu" id="menuToggle">☰</button>
-
             <div class="welcome">
                 <h2>مرحبا بك في استوديو الذكاء الاصطناعي</h2>
                 <p>حوّل أفكارك إلى فيديوهات إبداعية.</p>
             </div>
-
             <div class="top-actions">
                 <span class="status">● النظام جاهز</span>
                 <div class="avatar">AI</div>
             </div>
         </header>
 
-        <!-- HERO -->
         <section class="hero">
             <div class="hero-content">
                 <span class="hero-label">✦ YOUR CREATIVE AI STUDIO</span>
-
-                <h1>
-                    أطلق العنان<br>
-                    <span>لإبداعك بالفيديو</span>
-                </h1>
-
-                <p>
-                    أنشئ الفيديوهات، عدّل المقاطع، أضف المؤثرات
-                    والصوت باستعمال أدوات الذكاء الاصطناعي.
-                </p>
-
+                <h1>أطلق العنان<br><span>لإبداعك بالفيديو</span></h1>
+                <p>أنشئ الفيديوهات، عدّل المقاطع، أضف المؤثرات والصوت باستعمال أدوات الذكاء الاصطناعي.</p>
                 <a href="#create" class="primary-btn">ابدأ مشروعك الآن ✦</a>
             </div>
-
             <div class="hero-visual">
                 <div class="visual-circle">▶</div>
                 <div class="visual-text">AI VIDEO GENERATION</div>
             </div>
         </section>
 
-        <!-- CREATE VIDEO -->
         <section class="section" id="create">
             <div class="section-heading">
                 <div>
@@ -104,7 +83,6 @@
             </div>
 
             <div class="tools-grid">
-
                 <div class="tool-card">
                     <div class="tool-icon purple">✍</div>
                     <h3>نص إلى فيديو</h3>
@@ -132,40 +110,101 @@
                     <p>أضف التعليق الصوتي والمؤثرات الصوتية.</p>
                     <a href="#audio" class="tool-btn">ابدأ الآن</a>
                 </div>
-
             </div>
         </section>
 
-        <!-- TEXT TO VIDEO STUDIO -->
         <section class="section pro-creator" id="text-to-video">
-            <div class="section-heading"><div><h2>✍ Text to Video Studio</h2><p>حوّل السكريبت إلى مشاهد فيديو متتابعة مع الصور والنصوص.</p></div></div>
+            <div class="section-heading">
+                <div>
+                    <h2>✍ Text to Video Studio</h2>
+                    <p>حوّل السكريبت إلى مشاهد فيديو متتابعة مع الصور والنصوص.</p>
+                </div>
+            </div>
+
             <div class="creator-panel">
                 <label for="videoScript">السكريبت ديالك</label>
                 <textarea id="videoScript" rows="6" placeholder="كتب القصة أو السيناريو هنا... كل فقرة يمكن تحويلها إلى مشهد."></textarea>
+
                 <div class="creator-controls">
-                    <label>ستايل الفيديو<select id="videoStyle"><option value="cinematic">سينمائي</option><option value="documentary">وثائقي</option><option value="social">سوشيال ميديا</option><option value="minimal">بسيط</option></select></label>
-                    <label>المقاس<select id="videoRatio"><option value="16:9">أفقي 16:9</option><option value="9:16">عمودي 9:16</option><option value="1:1">مربع 1:1</option></select></label>
-                    <label>اللغة<select id="videoLanguage"><option value="ar">العربية</option><option value="fr">Français</option><option value="en">English</option></select></label>
-                    <label>مدة المشهد (ثانية)<input id="sceneDuration" type="number" min="2" max="20" value="5"></label>
+                    <label>ستايل الفيديو
+                        <select id="videoStyle">
+                            <option value="cinematic">سينمائي</option>
+                            <option value="documentary">وثائقي</option>
+                            <option value="social">سوشيال ميديا</option>
+                            <option value="minimal">بسيط</option>
+                        </select>
+                    </label>
+
+                    <label>المقاس
+                        <select id="videoRatio">
+                            <option value="16:9">أفقي 16:9</option>
+                            <option value="9:16">عمودي 9:16</option>
+                            <option value="1:1">مربع 1:1</option>
+                        </select>
+                    </label>
+
+                    <label>اللغة
+                        <select id="videoLanguage">
+                            <option value="ar">العربية</option>
+                            <option value="fr">Français</option>
+                            <option value="en">English</option>
+                        </select>
+                    </label>
+
+                    <label>مدة المشهد (ثانية)
+                        <input id="sceneDuration" type="number" min="2" max="20" value="5">
+                    </label>
                 </div>
-                <div class="creator-actions"><button id="generateScenes" type="button">إنشاء المشاهد</button><button id="clearScript" type="button" class="secondary-btn">مسح</button></div>
+
+                <div class="creator-actions">
+                    <button id="generateScenes" type="button">إنشاء المشاهد</button>
+                    <button id="clearScript" type="button" class="secondary-btn">مسح</button>
+                </div>
+
                 <p id="textVideoStatus" class="tool-status" aria-live="polite">أدخل السكريبت ثم أنشئ المشاهد.</p>
                 <div id="sceneList" class="scene-list"></div>
-                <div class="creator-actions"><button id="exportVideo" type="button" disabled>تصدير الفيديو</button><a id="textVideoDownload" hidden download="AI-TEXT-TO-VIDEO.webm">⬇ تحميل الفيديو</a></div>
+
+                <div class="creator-actions">
+                    <button id="exportVideo" type="button" disabled>تصدير الفيديو</button>
+                    <a id="textVideoDownload" hidden download="AI-TEXT-TO-VIDEO.webm">⬇ تحميل الفيديو</a>
+                </div>
             </div>
         </section>
 
-        <!-- IMAGE TO VIDEO STUDIO -->
         <section class="section pro-creator" id="image-to-video">
-            <div class="section-heading"><div><h2>▧ Image to Video Studio</h2><p>حوّل صورك إلى فيديو بحركة كاميرا وتأثير تقريب سينمائي.</p></div></div>
+            <div class="section-heading">
+                <div>
+                    <h2>▧ Image to Video Studio</h2>
+                    <p>حوّل صورك إلى فيديو بحركة كاميرا وتأثير تقريب سينمائي.</p>
+                </div>
+            </div>
+
             <div class="creator-panel">
                 <label for="imageVideoInput">اختار الصور (يمكن اختيار عدة صور)</label>
                 <input id="imageVideoInput" type="file" accept="image/*" multiple>
+
                 <div class="creator-controls">
-                    <label>المقاس<select id="imageVideoRatio"><option value="16:9">16:9 أفقي</option><option value="9:16">9:16 عمودي</option><option value="1:1">1:1 مربع</option></select></label>
-                    <label>مدة كل صورة<input id="imageSceneDuration" type="number" min="2" max="20" value="4"></label>
-                    <label>الحركة<select id="imageMotion"><option value="zoom">تقريب سينمائي</option><option value="pan">تحريك جانبي</option><option value="zoomout">إبعاد سينمائي</option></select></label>
+                    <label>المقاس
+                        <select id="imageVideoRatio">
+                            <option value="16:9">16:9 أفقي</option>
+                            <option value="9:16">9:16 عمودي</option>
+                            <option value="1:1">1:1 مربع</option>
+                        </select>
+                    </label>
+
+                    <label>مدة كل صورة
+                        <input id="imageSceneDuration" type="number" min="2" max="20" value="4">
+                    </label>
+
+                    <label>الحركة
+                        <select id="imageMotion">
+                            <option value="zoom">تقريب سينمائي</option>
+                            <option value="pan">تحريك جانبي</option>
+                            <option value="zoomout">إبعاد سينمائي</option>
+                        </select>
+                    </label>
                 </div>
+
                 <div id="imageVideoPreviewList" class="scene-list"></div>
                 <button id="createImageVideo" type="button">إنشاء فيديو من الصور</button>
                 <p id="imageVideoStatus" class="tool-status" aria-live="polite">اختار الصور للبدء.</p>
@@ -173,9 +212,7 @@
             </div>
         </section>
 
-        <!-- VIDEO WORKSPACE -->
         <section class="section workspace" id="editor">
-
             <div class="section-heading">
                 <div>
                     <h2>مساحة العمل</h2>
@@ -184,22 +221,12 @@
             </div>
 
             <div class="workspace-box">
-
                 <div class="upload-area" id="uploadArea">
                     <div class="upload-icon">⬆</div>
                     <h3>أضف ملفاتك إلى المشروع</h3>
                     <p>اختار الفيديوهات أو الصور من جهازك.</p>
-
                     <label for="mediaInput" class="upload-btn">اختيار الملفات</label>
-
-                    <input
-                        type="file"
-                        id="mediaInput"
-                        accept="video/*,image/*"
-                        multiple
-                        hidden
-                    >
-
+                    <input type="file" id="mediaInput" accept="video/*,image/*" multiple hidden>
                     <div id="fileList" class="file-list"></div>
                 </div>
 
@@ -208,16 +235,13 @@
                         <span class="play-icon">▶</span>
                         <p>معاينة الفيديو</p>
                     </div>
-
                     <div class="preview-controls">
                         <button id="playBtn">▶ تشغيل</button>
                         <span id="mediaInfo">لا يوجد ملف محدد</span>
                     </div>
                 </div>
 
-                <!-- VIDEO TIMELINE -->
                 <div class="timeline-editor">
-
                     <div class="timeline-header">
                         <h3>✂ Video Timeline</h3>
                         <span id="clipCounter">0 مقطع</span>
@@ -236,12 +260,9 @@
                         <span>المدة الإجمالية:</span>
                         <strong id="totalDuration">00:00</strong>
                     </div>
-
                 </div>
 
-                <!-- SMART AUTO MONTAGE -->
                 <div class="auto-montage-box" id="smart-montage">
-
                     <div class="auto-montage-info">
                         <span class="auto-montage-icon">✦</span>
                         <div>
@@ -250,33 +271,20 @@
                         </div>
                     </div>
 
-                    <button id="smartAutoMontage" type="button">
-                        ✨ ابدأ المونتاج التلقائي
-                    </button>
+                    <button id="smartAutoMontage" type="button">✨ ابدأ المونتاج التلقائي</button>
 
                     <div class="auto-montage-progress">
                         <div id="autoMontageProgress"></div>
                     </div>
 
-                    <p id="autoMontageStatus">
-                        أضف الفيديوهات إلى Timeline ثم اضغط على الزر.
-                    </p>
+                    <p id="autoMontageStatus">أضف الفيديوهات إلى Timeline ثم اضغط على الزر.</p>
 
-                    <a
-                        id="autoMontageDownload"
-                        hidden
-                        download="SMART-AUTO-MONTAGE.mp4">
-                        ⬇ تحميل الفيديو النهائي
-                    </a>
-
+                    <a id="autoMontageDownload" hidden download="SMART-AUTO-MONTAGE.mp4">⬇ تحميل الفيديو النهائي</a>
                 </div>
-
             </div>
         </section>
 
-        <!-- VIDEO TRIMMER -->
         <section class="section" id="trim-editor">
-
             <div class="section-heading">
                 <div>
                     <h2>✂ Professional Video Trimmer</h2>
@@ -300,7 +308,6 @@
                         <label for="trimStart">وقت البداية (بالثواني)</label>
                         <input type="number" id="trimStart" min="0" step="0.1" value="0">
                     </div>
-
                     <div>
                         <label for="trimEnd">وقت النهاية (بالثواني)</label>
                         <input type="number" id="trimEnd" min="0" step="0.1" value="10">
@@ -317,16 +324,11 @@
                 </div>
 
                 <p id="trimStatus">المحرك لم يتم تحميله بعد.</p>
-
-                <a id="downloadTrim" hidden download="AI-VIDEO-TRIMMED.mp4">
-                    ⬇ تحميل الفيديو النهائي
-                </a>
+                <a id="downloadTrim" hidden download="AI-VIDEO-TRIMMED.mp4">⬇ تحميل الفيديو النهائي</a>
             </div>
         </section>
 
-        <!-- VIDEO MERGE STUDIO -->
         <section class="section" id="mergeStudio">
-
             <div class="section-heading">
                 <div>
                     <h2>🎬 دمج الفيديوهات</h2>
@@ -337,26 +339,16 @@
             <div class="trim-box merge-box">
                 <h3>📁 اختيار الفيديوهات</h3>
                 <p>اختار جوج فيديوهات أو أكثر من جهازك باش تجمعهم في فيديو واحد.</p>
-
                 <input type="file" id="mergeInput" accept="video/*" multiple>
-
                 <div id="mergeStatus" class="trim-status">لم يتم اختيار أي فيديو</div>
-
-                <div class="trim-progress">
-                    <div id="mergeProgress"></div>
-                </div>
-
+                <div class="trim-progress"><div id="mergeProgress"></div></div>
                 <button id="mergeButton" type="button">🎬 دمج الفيديوهات</button>
-
-                <a id="mergeDownload" hidden download="AI-STUDIO-MERGED.mp4">
-                    ⬇ تحميل الفيديو النهائي
-                </a>
+                <a id="mergeDownload" hidden download="AI-STUDIO-MERGED.mp4">⬇ تحميل الفيديو النهائي</a>
             </div>
         </section>
 
         <!-- AUDIO STUDIO PRO -->
         <section class="section" id="audio">
-
             <div class="section-heading">
                 <div>
                     <h2>🎵 Audio Studio Pro</h2>
@@ -365,13 +357,10 @@
             </div>
 
             <div class="audio-studio-grid">
-
                 <div class="audio-card">
                     <h3>🎬 الفيديو الأصلي</h3>
                     <input type="file" id="audioVideoInput" accept="video/*">
-
                     <video id="audioVideoPreview" controls playsinline hidden class="audio-preview-video"></video>
-
                     <p id="audioVideoName">لم يتم اختيار فيديو</p>
 
                     <label class="audio-check">
@@ -387,11 +376,8 @@
                 <div class="audio-card">
                     <h3>🎼 الموسيقى الخلفية</h3>
                     <input type="file" id="musicInput" accept="audio/*">
-
                     <audio id="musicPreview" controls hidden></audio>
-
                     <p id="musicName">لم يتم اختيار موسيقى</p>
-
                     <label for="musicVolume">مستوى الموسيقى</label>
                     <input type="range" id="musicVolume" min="0" max="2" step="0.05" value="0.25">
                     <span id="musicVolumeValue">25%</span>
@@ -400,42 +386,49 @@
                 <div class="audio-card">
                     <h3>🎙️ التعليق الصوتي</h3>
                     <input type="file" id="voiceInput" accept="audio/*">
-
                     <audio id="voicePreview" controls hidden></audio>
-
                     <p id="voiceName">التعليق الصوتي اختياري</p>
-
                     <label for="voiceVolume">مستوى التعليق الصوتي</label>
                     <input type="range" id="voiceVolume" min="0" max="2" step="0.05" value="1">
                     <span id="voiceVolumeValue">100%</span>
                 </div>
-
             </div>
 
+            <!-- MICROPHONE RECORDER -->
             <div class="audio-card mic-recorder-card">
                 <h3>🎙️ تسجيل التعليق الصوتي بالميكروفون</h3>
                 <p>سجّل صوتك مباشرة من المتصفح، ثم استعمله كتعليق صوتي في Audio Studio.</p>
-                <div class="creator-actions"><button id="startMicRecording" type="button">● بدء التسجيل</button><button id="stopMicRecording" type="button" disabled>إيقاف التسجيل</button><button id="deleteMicRecording" type="button" class="secondary-btn" disabled>حذف التسجيل</button></div>
+
+                <div class="creator-actions">
+                    <button id="startMicRecording" type="button">● بدء التسجيل</button>
+                    <button id="stopMicRecording" type="button" disabled>■ إيقاف التسجيل</button>
+                    <button id="deleteMicRecording" type="button" class="secondary-btn" disabled>حذف التسجيل</button>
+                </div>
+
+                <!-- NEW TIMER AND WAVEFORM -->
+                <div class="mic-visualizer">
+                    <div class="mic-timer-box">
+                        <span>مدة التسجيل</span>
+                        <strong id="micTimer">00:00</strong>
+                    </div>
+
+                    <div class="mic-waveform-box">
+                        <canvas id="micWaveform" width="900" height="140"></canvas>
+                    </div>
+                </div>
+
                 <p id="micStatus" class="tool-status" aria-live="polite">الميكروفون غير مفعل.</p>
                 <audio id="recordedVoicePreview" controls hidden></audio>
             </div>
 
             <div class="audio-export-box">
                 <button id="exportAudioMix" type="button">🎬 إنشاء الفيديو بالصوت الجديد</button>
-
-                <div class="audio-progress">
-                    <div id="audioProgressBar"></div>
-                </div>
-
+                <div class="audio-progress"><div id="audioProgressBar"></div></div>
                 <p id="audioStatus">اختار الفيديو والموسيقى للبدء.</p>
-
-                <a id="audioDownload" hidden download="AI-STUDIO-AUDIO.mp4">
-                    ⬇ تحميل الفيديو النهائي
-                </a>
+                <a id="audioDownload" hidden download="AI-STUDIO-AUDIO.mp4">⬇ تحميل الفيديو النهائي</a>
             </div>
         </section>
 
-        <!-- PROJECTS -->
         <section class="section" id="projects">
             <div class="section-heading">
                 <div>
@@ -451,7 +444,6 @@
             </div>
         </section>
 
-        <!-- FOOTER -->
         <footer>
             <p>AI VIDEO STUDIO PRO © 2026</p>
             <p>CREATED FOR CREATORS ✦</p>
