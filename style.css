@@ -1115,3 +1115,47 @@ footer {
 .creator-controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-top:12px}.creator-controls label,.creator-panel>label{color:#e7c77f;font-weight:700;font-size:14px}
 .creator-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:12px 0}.creator-panel button,.mic-recorder-card button{background:linear-gradient(135deg,#a7792e,#e6c77f);color:#17120a;border:0;border-radius:10px;padding:11px 18px;font-weight:800;cursor:pointer}.creator-panel button:disabled,.mic-recorder-card button:disabled{opacity:.45;cursor:not-allowed}.creator-panel .secondary-btn,.mic-recorder-card .secondary-btn{background:#292929;color:#eee;border:1px solid #555}.tool-status{color:#d8bd83;min-height:24px;margin:12px 0}.scene-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:16px 0}.scene-card{background:#101010;border:1px solid #44371f;border-radius:12px;padding:12px;overflow:hidden}.scene-card img{width:100%;height:125px;object-fit:cover;border-radius:8px;background:#222}.scene-card p{font-size:13px;color:#ddd;line-height:1.6}.scene-card input{font-size:12px}.mic-recorder-card{margin:18px 0;background:#151515;border:1px solid rgba(212,170,86,.25);border-radius:16px;padding:20px}.mic-recorder-card audio{width:100%;margin-top:12px}.creator-panel a,.audio-export-box a{display:inline-block;color:#f3d58e;margin:10px 0;font-weight:800}
 @media(max-width:650px){.creator-panel{padding:14px!important}.creator-actions>*{flex:1}.scene-list{grid-template-columns:1fr 1fr}}
+.mic-visualizer {
+    display: grid;
+    grid-template-columns: 130px 1fr;
+    gap: 15px;
+    align-items: center;
+    margin: 20px 0;
+}
+
+.mic-timer-box,
+.mic-waveform-box {
+    background: #111827;
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 14px;
+    padding: 15px;
+}
+
+.mic-timer-box span {
+    display: block;
+    color: #a1a1aa;
+    font-size: 12px;
+    margin-bottom: 8px;
+}
+
+#micTimer {
+    color: #facc15;
+    font-size: 27px;
+    font-weight: 800;
+    direction: ltr;
+    display: block;
+}
+
+#micWaveform {
+    display: block;
+    width: 100%;
+    height: 90px;
+    background: #090d18;
+    border-radius: 9px;
+}
+
+@media(max-width:600px) {
+    .mic-visualizer {
+        grid-template-columns: 1fr;
+    }
+}
