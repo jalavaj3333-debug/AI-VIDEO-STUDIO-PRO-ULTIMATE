@@ -485,6 +485,44 @@
                 <p>بدا أول مشروع ديالك وغادي يظهر هنا.</p>
             </div>
         </section>
+        
+<section class="section" id="automationStudio">
+    <div class="section-heading">
+        <div>
+            <h2>🤖 AI Automation Studio</h2>
+            <p>تحكم في المهام باستعمال محرك الأتمتة المحلي.</p>
+        </div>
+    </div>
+
+    <div class="trim-box">
+        <h3>Local Automation Engine</h3>
+
+        <label for="automationToken">
+            رمز الحماية المحلي
+        </label>
+
+        <input
+            type="password"
+            id="automationToken"
+            placeholder="ألصق رمز الحماية من CMD"
+            autocomplete="off"
+        >
+
+        <p id="automationConnectionStatus">
+            غير متصل بالسيرفر.
+        </p>
+
+        <button id="automationConnect" type="button">
+            🔌 اختبار الاتصال
+        </button>
+
+        <button id="automationTest" type="button" disabled>
+            🌐 فتح Example Domain
+        </button>
+
+        <p id="automationResult" aria-live="polite"></p>
+    </div>
+</section>
 
         <footer>
             <p>AI VIDEO STUDIO PRO © 2026</p>
@@ -503,6 +541,6 @@
 <script src="image-to-video.js"></script>
 <script src="ai-tools-hub.js"></script>
 <script src="prompt-builder.js"></script>
-
+<script src="automation-connector.js"></script>
 </body>
 </html>
