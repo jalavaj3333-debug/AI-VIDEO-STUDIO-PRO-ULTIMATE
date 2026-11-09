@@ -1,29 +1,32 @@
-
 document.addEventListener("DOMContentLoaded", () => {
     const startButton = document.getElementById("smartAutoMontage");
     const progressBar = document.getElementById("autoMontageProgress");
     const statusText = document.getElementById("autoMontageStatus");
     const downloadLink = document.getElementById("autoMontageDownload");
+
     const musicInput = document.getElementById("musicInput");
     const musicVolume = document.getElementById("musicVolume");
     const originalVolumeInput = document.getElementById("originalVolume");
-const musicVolumeValue = document.getElementById("musicVolumeValue");
-const originalVolumeValue = document.getElementById("originalVolumeValue");
 
-function updateVolumeLabels() {
-    if (musicVolumeValue && musicVolume) {
-        musicVolumeValue.textContent = musicVolume.value + "%";
+    const musicVolumeValue = document.getElementById("musicVolumeValue");
+    const originalVolumeValue = document.getElementById("originalVolumeValue");
+
+    const qualitySelect = document.getElementById("exportQuality");
+    const fpsSelect = document.getElementById("exportFPS");
+
+    function updateVolumeLabels() {
+        if (musicVolumeValue && musicVolume) {
+            musicVolumeValue.textContent = musicVolume.value + "%";
+        }
+
+        if (originalVolumeValue && originalVolumeInput) {
+            originalVolumeValue.textContent = originalVolumeInput.value + "%";
+        }
     }
 
-    if (originalVolumeValue && originalVolumeInput) {
-        originalVolumeValue.textContent = originalVolumeInput.value + "%";
-    }
-}
-
-musicVolume?.addEventListener("input", updateVolumeLabels);
-originalVolumeInput?.addEventListener("input", updateVolumeLabels);
-
-updateVolumeLabels();
+    musicVolume?.addEventListener("input", updateVolumeLabels);
+    originalVolumeInput?.addEventListener("input", updateVolumeLabels);
+    updateVolumeLabels();
 
     if (!startButton) {
         console.warn("Auto Montage button not found.");
@@ -34,7 +37,6 @@ updateVolumeLabels();
     let lastOutputURL = null;
 
     const OUTPUT_NAME = "SMAILLY_AI_AUTO_MONTAGE.mp4";
-    const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
     function updateStatus(message) {
         if (statusText) statusText.textContent = message;
@@ -42,8 +44,11 @@ updateVolumeLabels();
 
     function updateProgress(value) {
         if (!progressBar) return;
-        progressBar.style.width = `${Math.max(0, Math.min(100, value))}%`;
-        progressBar.setAttribute("aria-valuenow", String(value));
+
+        const safeValue = Math.max(0, Math.min(100, value));
+
+        progressBar.style.width = `${safeValue}%`;
+        progressBar.setAttribute("aria-valuenow", String(safeValue));
     }
 
     function getExtension(file) {
@@ -55,19 +60,53 @@ updateVolumeLabels();
         return Number(Number(value).toFixed(3));
     }
 
-    function getVideoFormat() {
+    // إعداد الجودة و FPS
+    function getExportSettings() {
+        const quality = Number(qualitySelect?.value || 1080);
+        const fps = Number(fpsSelect?.value || 30);
+
+        if (![720, 1080].includes(quality)) {
+            throw new Error("اختار جودة 720p أو 1080p.");
+        }
+
+        if (![30, 60].includes(fps)) {
+            throw new Error("اختار 30 أو 60 FPS.");
+        }
+
+        return { quality, fps };
+    }
+
+    // اختيار أبعاد الفيديو حسب النسبة والجودة
+    function getVideoFormat(quality) {
         const selector =
             document.getElementById("autoMontageRatio") ||
             document.getElementById("videoRatio");
 
+        const ratio = selector?.value || "16:9";
+
         const formats = {
-            "16:9": { width: 1280, height: 720 },
-            "9:16": { width: 720, height: 1280 },
-            "1:1": { width: 1080, height: 1080 },
-            "4:5": { width: 864, height: 1080 }
+            "16:9": {
+                720: { width: 1280, height: 720 },
+                1080: { width: 1920, height: 1080 }
+            },
+
+            "9:16": {
+                720: { width: 720, height: 1280 },
+                1080: { width: 1080, height: 1920 }
+            },
+
+            "1:1": {
+                720: { width: 720, height: 720 },
+                1080: { width: 1080, height: 1080 }
+            },
+
+            "4:5": {
+                720: { width: 576, height: 720 },
+                1080: { width: 864, height: 1080 }
+            }
         };
 
-        return formats[selector?.value || "16:9"] || formats["16:9"];
+        return (formats[ratio] || formats["16:9"])[quality];
     }
 
     function validateClips(clips) {
@@ -80,7 +119,10 @@ updateVolumeLabels();
                 throw new Error(`المقطع ${index + 1} ليس فيديو صالحاً.`);
             }
 
-            if (!Number.isFinite(Number(clip.duration)) || Number(clip.duration) <= 0) {
+            if (
+                !Number.isFinite(Number(clip.duration)) ||
+                Number(clip.duration) <= 0
+            ) {
                 throw new Error(`مدة المقطع ${index + 1} غير صالحة.`);
             }
         });
@@ -102,10 +144,13 @@ updateVolumeLabels();
             const data = await ffmpeg.readFile(probeName);
             const result = JSON.parse(new TextDecoder().decode(data));
 
-            return Array.isArray(result.streams) && result.streams.length > 0;
+            return Array.isArray(result.streams) &&
+                result.streams.length > 0;
+
         } catch (error) {
             console.warn("Audio detection failed:", fileName, error);
             throw new Error(`تعذر فحص الصوت في ${fileName}.`);
+
         } finally {
             try {
                 await ffmpeg.deleteFile(probeName);
@@ -134,12 +179,19 @@ updateVolumeLabels();
                 throw new Error("محرك FFmpeg غير جاهز.");
             }
 
+            // قراءة إعدادات التصدير
+            const { quality, fps } = getExportSettings();
+            const format = getVideoFormat(quality);
+
             isProcessing = true;
             startButton.disabled = true;
             startButton.textContent = "⏳ جاري المونتاج...";
 
             updateProgress(0);
-            updateStatus("تهيئة Auto Montage Pro...");
+
+            updateStatus(
+                `جاري تجهيز الفيديو بجودة ${quality}p و ${fps} FPS...`
+            );
 
             if (downloadLink) {
                 downloadLink.hidden = true;
@@ -157,15 +209,16 @@ updateVolumeLabels();
                 "https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.2/dist/esm/index.js"
             );
 
-            const format = getVideoFormat();
-
             const durations = clips.map(clip =>
                 cleanNumber(Number(clip.duration))
             );
 
             const transitionDuration = clips.length < 2
                 ? 0
-                : Math.min(0.8, ...durations.map(d => d * 0.2));
+                : Math.min(
+                    0.8,
+                    ...durations.map(d => d * 0.2)
+                );
 
             const finalDuration = cleanNumber(
                 durations.reduce((sum, d) => sum + d, 0) -
@@ -181,48 +234,63 @@ updateVolumeLabels();
 
             // تحميل الفيديوهات وفحص الصوت
             for (let i = 0; i < clips.length; i++) {
-                updateStatus(`تحميل الفيديو ${i + 1}/${clips.length}...`);
+                updateStatus(
+                    `تحميل الفيديو ${i + 1}/${clips.length}...`
+                );
 
                 const name =
                     `montage_clip_${String(i + 1).padStart(3, "0")}.` +
                     getExtension(clips[i].file);
 
-                await ffmpeg.writeFile(name, await fetchFile(clips[i].file));
+                await ffmpeg.writeFile(
+                    name,
+                    await fetchFile(clips[i].file)
+                );
 
                 inputNames.push(name);
                 temporaryFiles.push(name);
 
                 updateStatus(`فحص الصوت في الفيديو ${i + 1}...`);
 
-                audioPresence.push(await hasAudioStream(ffmpeg, name));
+                audioPresence.push(
+                    await hasAudioStream(ffmpeg, name)
+                );
 
                 updateProgress(5 + ((i + 1) / clips.length) * 25);
             }
 
-            // تحميل الموسيقى إن وجدت
+            // تحميل الموسيقى
             let musicName = null;
 
             if (musicFile) {
                 updateStatus("تحميل الموسيقى الخلفية...");
 
-                musicName = `montage_music.${getExtension(musicFile)}`;
+                musicName =
+                    `montage_music.${getExtension(musicFile)}`;
 
-                await ffmpeg.writeFile(musicName, await fetchFile(musicFile));
+                await ffmpeg.writeFile(
+                    musicName,
+                    await fetchFile(musicFile)
+                );
+
                 temporaryFiles.push(musicName);
             }
 
             // مستويات الصوت
-            const originalVolumeInput =
-                document.getElementById("originalVolume");
-
             const originalVolume = Math.max(
                 0,
-                Math.min(2, Number(originalVolumeInput?.value ?? 100) / 100)
+                Math.min(
+                    2,
+                    Number(originalVolumeInput?.value ?? 100) / 100
+                )
             );
 
             const musicLevel = Math.max(
                 0,
-                Math.min(1, Number(musicVolume?.value ?? 30) / 100)
+                Math.min(
+                    1,
+                    Number(musicVolume?.value ?? 25) / 100
+                )
             );
 
             const filters = [];
@@ -235,7 +303,7 @@ updateVolumeLabels();
                     `setpts=PTS-STARTPTS,` +
                     `scale=${format.width}:${format.height}:force_original_aspect_ratio=decrease,` +
                     `pad=${format.width}:${format.height}:(ow-iw)/2:(oh-ih)/2,` +
-                    `setsar=1,fps=30,format=yuv420p,` +
+                    `setsar=1,fps=${fps},format=yuv420p,` +
                     `settb=AVTB[v${i}]`
                 );
 
@@ -248,6 +316,7 @@ updateVolumeLabels();
                         `aformat=sample_rates=48000:channel_layouts=stereo,` +
                         `volume=${originalVolume}[a${i}]`
                     );
+
                 } else {
                     filters.push(
                         `anullsrc=r=48000:cl=stereo,` +
@@ -260,6 +329,7 @@ updateVolumeLabels();
             if (clips.length === 1) {
                 filters.push("[v0]null[outv]");
                 filters.push("[a0]anull[originalMix]");
+
             } else {
                 let previousVideo = "v0";
                 let previousAudio = "a0";
@@ -271,10 +341,14 @@ updateVolumeLabels();
                     );
 
                     const videoLabel =
-                        i === clips.length - 1 ? "outv" : `fade${i}`;
+                        i === clips.length - 1
+                            ? "outv"
+                            : `fade${i}`;
 
                     const audioLabel =
-                        i === clips.length - 1 ? "originalMix" : `audioFade${i}`;
+                        i === clips.length - 1
+                            ? "originalMix"
+                            : `audioFade${i}`;
 
                     filters.push(
                         `[${previousVideo}][v${i}]` +
@@ -291,7 +365,8 @@ updateVolumeLabels();
                     previousVideo = videoLabel;
                     previousAudio = audioLabel;
 
-                    accumulatedDuration += durations[i] - transitionDuration;
+                    accumulatedDuration +=
+                        durations[i] - transitionDuration;
                 }
             }
 
@@ -299,7 +374,10 @@ updateVolumeLabels();
             if (musicFile) {
                 const musicIndex = clips.length;
                 const fadeDuration = Math.min(2, finalDuration);
-                const fadeStart = Math.max(0, finalDuration - fadeDuration);
+                const fadeStart = Math.max(
+                    0,
+                    finalDuration - fadeDuration
+                );
 
                 filters.push(
                     `[${musicIndex}:a:0]` +
@@ -317,6 +395,7 @@ updateVolumeLabels();
                     `amix=inputs=2:duration=first:dropout_transition=2,` +
                     `alimiter=limit=0.95[outa]`
                 );
+
             } else {
                 filters.push(
                     "[originalMix]alimiter=limit=0.95[outa]"
@@ -337,27 +416,41 @@ updateVolumeLabels();
                 );
             }
 
+            const crf = quality === 1080 ? "23" : "26";
+
             const args = [
                 "-y",
+
                 ...inputArguments,
-                "-filter_complex", filters.join(";"),
+
+                "-filter_complex",
+                filters.join(";"),
+
                 "-map", "[outv]",
                 "-map", "[outa]",
+
                 "-c:v", "libx264",
                 "-preset", "ultrafast",
-                "-crf", "23",
+                "-crf", crf,
                 "-pix_fmt", "yuv420p",
-                "-r", "30",
+                "-r", String(fps),
+
                 "-c:a", "aac",
                 "-b:a", "192k",
                 "-ar", "48000",
+
                 "-t", String(finalDuration),
+
                 "-movflags", "+faststart",
+
                 OUTPUT_NAME
             ];
 
             updateProgress(65);
-            updateStatus("إنشاء الفيديو والصوت...");
+
+            updateStatus(
+                `إنشاء الفيديو: ${quality}p / ${fps} FPS...`
+            );
 
             await ffmpeg.exec(args);
 
@@ -381,15 +474,19 @@ updateVolumeLabels();
             }
 
             updateProgress(100);
+
             updateStatus(
-                `تم إنشاء الفيديو بنجاح! ${format.width} × ${format.height}`
+                `تم إنشاء الفيديو بنجاح! ${format.width} × ${format.height} | ${fps} FPS`
             );
 
         } catch (error) {
             console.error("AUTO MONTAGE ERROR:", error);
+
             updateProgress(0);
+
             updateStatus(
-                "تعذر إنشاء الفيديو: " + (error?.message || "خطأ غير معروف.")
+                "تعذر إنشاء الفيديو: " +
+                (error?.message || "خطأ غير معروف.")
             );
 
         } finally {
