@@ -1,32 +1,23 @@
 document.addEventListener("DOMContentLoaded", () => {
-    const startButton = document.getElementById("smartAutoMontage");
-    const progressBar = document.getElementById("autoMontageProgress");
-    const statusText = document.getElementById("autoMontageStatus");
-    const downloadLink = document.getElementById("autoMontageDownload");
+    "use strict";
 
-    const musicInput = document.getElementById("musicInput");
-    const musicVolume = document.getElementById("musicVolume");
-    const originalVolumeInput = document.getElementById("originalVolume");
+    const $ = id => document.getElementById(id);
 
-    const musicVolumeValue = document.getElementById("musicVolumeValue");
-    const originalVolumeValue = document.getElementById("originalVolumeValue");
+    const startButton = $("smartAutoMontage");
+    const progressBar = $("autoMontageProgress");
+    const statusText = $("autoMontageStatus");
+    const downloadLink = $("autoMontageDownload");
 
-    const qualitySelect = document.getElementById("exportQuality");
-    const fpsSelect = document.getElementById("exportFPS");
+    const musicInput = $("musicInput");
 
-    function updateVolumeLabels() {
-        if (musicVolumeValue && musicVolume) {
-            musicVolumeValue.textContent = musicVolume.value + "%";
-        }
+    const qualitySelect = $("exportQuality");
+    const fpsSelect = $("exportFPS");
 
-        if (originalVolumeValue && originalVolumeInput) {
-            originalVolumeValue.textContent = originalVolumeInput.value + "%";
-        }
-    }
+    const originalVolumeInput = $("autoMontageOriginalVolume");
+    const musicVolumeInput = $("autoMontageMusicVolume");
 
-    musicVolume?.addEventListener("input", updateVolumeLabels);
-    originalVolumeInput?.addEventListener("input", updateVolumeLabels);
-    updateVolumeLabels();
+    const originalVolumeLabel = $("autoMontageOriginalVolumeValue");
+    const musicVolumeLabel = $("autoMontageMusicVolumeValue");
 
     if (!startButton) {
         console.warn("Auto Montage button not found.");
@@ -45,14 +36,31 @@ document.addEventListener("DOMContentLoaded", () => {
     function updateProgress(value) {
         if (!progressBar) return;
 
-        const safeValue = Math.max(0, Math.min(100, value));
+        const safe = Math.max(0, Math.min(100, value));
 
-        progressBar.style.width = `${safeValue}%`;
-        progressBar.setAttribute("aria-valuenow", String(safeValue));
+        progressBar.style.width = `${safe}%`;
+        progressBar.setAttribute("aria-valuenow", String(safe));
     }
 
+    function updateVolumeLabels() {
+        if (originalVolumeLabel && originalVolumeInput) {
+            originalVolumeLabel.textContent =
+                `${originalVolumeInput.value}%`;
+        }
+
+        if (musicVolumeLabel && musicVolumeInput) {
+            musicVolumeLabel.textContent =
+                `${musicVolumeInput.value}%`;
+        }
+    }
+
+    originalVolumeInput?.addEventListener("input", updateVolumeLabels);
+    musicVolumeInput?.addEventListener("input", updateVolumeLabels);
+
+    updateVolumeLabels();
+
     function getExtension(file) {
-        const match = file.name.match(/\.([a-zA-Z0-9]+)$/);
+        const match = (file.name || "").match(/\.([a-z0-9]+)$/i);
         return match ? match[1].toLowerCase() : "mp4";
     }
 
@@ -60,7 +68,6 @@ document.addEventListener("DOMContentLoaded", () => {
         return Number(Number(value).toFixed(3));
     }
 
-    // إعداد الجودة و FPS
     function getExportSettings() {
         const quality = Number(qualitySelect?.value || 1080);
         const fps = Number(fpsSelect?.value || 30);
@@ -76,37 +83,37 @@ document.addEventListener("DOMContentLoaded", () => {
         return { quality, fps };
     }
 
-    // اختيار أبعاد الفيديو حسب النسبة والجودة
     function getVideoFormat(quality) {
-        const selector =
-            document.getElementById("autoMontageRatio") ||
-            document.getElementById("videoRatio");
+        const ratioSelect =
+            $("autoMontageRatio") || $("videoRatio");
 
-        const ratio = selector?.value || "16:9";
+        const ratio = ratioSelect?.value || "16:9";
 
         const formats = {
             "16:9": {
-                720: { width: 1280, height: 720 },
-                1080: { width: 1920, height: 1080 }
+                720: [1280, 720],
+                1080: [1920, 1080]
             },
-
             "9:16": {
-                720: { width: 720, height: 1280 },
-                1080: { width: 1080, height: 1920 }
+                720: [720, 1280],
+                1080: [1080, 1920]
             },
-
             "1:1": {
-                720: { width: 720, height: 720 },
-                1080: { width: 1080, height: 1080 }
+                720: [720, 720],
+                1080: [1080, 1080]
             },
-
             "4:5": {
-                720: { width: 576, height: 720 },
-                1080: { width: 864, height: 1080 }
+                720: [576, 720],
+                1080: [864, 1080]
             }
         };
 
-        return (formats[ratio] || formats["16:9"])[quality];
+        const selected = (formats[ratio] || formats["16:9"])[quality];
+
+        return {
+            width: selected[0],
+            height: selected[1]
+        };
     }
 
     function validateClips(clips) {
@@ -129,9 +136,17 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     async function hasAudioStream(ffmpeg, fileName) {
-        const probeName = `audio_probe_${Date.now()}.json`;
+        const probeName =
+            `audio_probe_${Date.now()}_${Math.random()
+                .toString(36).slice(2)}.json`;
 
         try {
+            if (typeof ffmpeg.ffprobe !== "function") {
+                throw new Error(
+                    "محرك FFmpeg الحالي لا يدعم فحص المسارات الصوتية."
+                );
+            }
+
             await ffmpeg.ffprobe([
                 "-v", "error",
                 "-select_streams", "a:0",
@@ -142,14 +157,19 @@ document.addEventListener("DOMContentLoaded", () => {
             ]);
 
             const data = await ffmpeg.readFile(probeName);
-            const result = JSON.parse(new TextDecoder().decode(data));
+            const parsed = JSON.parse(
+                new TextDecoder().decode(data)
+            );
 
-            return Array.isArray(result.streams) &&
-                result.streams.length > 0;
+            return Array.isArray(parsed.streams) &&
+                parsed.streams.length > 0;
 
         } catch (error) {
-            console.warn("Audio detection failed:", fileName, error);
-            throw new Error(`تعذر فحص الصوت في ${fileName}.`);
+            console.error("Audio probe error:", error);
+
+            throw new Error(
+                `تعذر فحص الصوت في ${fileName}: ${error.message}`
+            );
 
         } finally {
             try {
@@ -171,27 +191,44 @@ document.addEventListener("DOMContentLoaded", () => {
 
             validateClips(clips);
 
-            if (musicFile && !musicFile.type.startsWith("audio/")) {
+            if (
+                musicFile &&
+                !musicFile.type.startsWith("audio/")
+            ) {
                 throw new Error("اختار ملف موسيقى صالح.");
             }
 
             if (!window.videoFFmpeg || !window.videoFFmpegLoaded) {
-                throw new Error("محرك FFmpeg غير جاهز.");
+                throw new Error(
+                    "محرك FFmpeg غير جاهز. حمّلو من أداة قص الفيديو أولاً."
+                );
             }
 
-            // قراءة إعدادات التصدير
             const { quality, fps } = getExportSettings();
             const format = getVideoFormat(quality);
+
+            const originalVolume = Math.max(
+                0,
+                Math.min(
+                    2,
+                    Number(originalVolumeInput?.value ?? 100) / 100
+                )
+            );
+
+            const musicLevel = Math.max(
+                0,
+                Math.min(
+                    1,
+                    Number(musicVolumeInput?.value ?? 25) / 100
+                )
+            );
 
             isProcessing = true;
             startButton.disabled = true;
             startButton.textContent = "⏳ جاري المونتاج...";
 
             updateProgress(0);
-
-            updateStatus(
-                `جاري تجهيز الفيديو بجودة ${quality}p و ${fps} FPS...`
-            );
+            updateStatus(`جاري تجهيز الفيديو ${quality}p / ${fps} FPS...`);
 
             if (downloadLink) {
                 downloadLink.hidden = true;
@@ -217,11 +254,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 ? 0
                 : Math.min(
                     0.8,
-                    ...durations.map(d => d * 0.2)
+                    ...durations.map(duration => duration * 0.2)
                 );
 
             const finalDuration = cleanNumber(
-                durations.reduce((sum, d) => sum + d, 0) -
+                durations.reduce((sum, duration) => sum + duration, 0) -
                 transitionDuration * (clips.length - 1)
             );
 
@@ -232,7 +269,6 @@ document.addEventListener("DOMContentLoaded", () => {
             const inputNames = [];
             const audioPresence = [];
 
-            // تحميل الفيديوهات وفحص الصوت
             for (let i = 0; i < clips.length; i++) {
                 updateStatus(
                     `تحميل الفيديو ${i + 1}/${clips.length}...`
@@ -256,10 +292,11 @@ document.addEventListener("DOMContentLoaded", () => {
                     await hasAudioStream(ffmpeg, name)
                 );
 
-                updateProgress(5 + ((i + 1) / clips.length) * 25);
+                updateProgress(
+                    5 + ((i + 1) / clips.length) * 25
+                );
             }
 
-            // تحميل الموسيقى
             let musicName = null;
 
             if (musicFile) {
@@ -276,26 +313,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 temporaryFiles.push(musicName);
             }
 
-            // مستويات الصوت
-            const originalVolume = Math.max(
-                0,
-                Math.min(
-                    2,
-                    Number(originalVolumeInput?.value ?? 100) / 100
-                )
-            );
-
-            const musicLevel = Math.max(
-                0,
-                Math.min(
-                    1,
-                    Number(musicVolume?.value ?? 25) / 100
-                )
-            );
-
             const filters = [];
 
-            // معالجة الفيديو والصوت لكل مقطع
             for (let i = 0; i < clips.length; i++) {
                 filters.push(
                     `[${i}:v:0]` +
@@ -316,7 +335,6 @@ document.addEventListener("DOMContentLoaded", () => {
                         `aformat=sample_rates=48000:channel_layouts=stereo,` +
                         `volume=${originalVolume}[a${i}]`
                     );
-
                 } else {
                     filters.push(
                         `anullsrc=r=48000:cl=stereo,` +
@@ -325,11 +343,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             }
 
-            // انتقالات الفيديو والصوت
             if (clips.length === 1) {
                 filters.push("[v0]null[outv]");
                 filters.push("[a0]anull[originalMix]");
-
             } else {
                 let previousVideo = "v0";
                 let previousAudio = "a0";
@@ -370,7 +386,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             }
 
-            // الموسيقى والصوت الأصلي
             if (musicFile) {
                 const musicIndex = clips.length;
                 const fadeDuration = Math.min(2, finalDuration);
@@ -395,14 +410,12 @@ document.addEventListener("DOMContentLoaded", () => {
                     `amix=inputs=2:duration=first:dropout_transition=2,` +
                     `alimiter=limit=0.95[outa]`
                 );
-
             } else {
                 filters.push(
                     "[originalMix]alimiter=limit=0.95[outa]"
                 );
             }
 
-            // تجهيز أوامر FFmpeg
             const inputArguments = [];
 
             inputNames.forEach(name => {
@@ -420,42 +433,35 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const args = [
                 "-y",
-
                 ...inputArguments,
-
                 "-filter_complex",
                 filters.join(";"),
-
                 "-map", "[outv]",
                 "-map", "[outa]",
-
                 "-c:v", "libx264",
                 "-preset", "ultrafast",
                 "-crf", crf,
                 "-pix_fmt", "yuv420p",
                 "-r", String(fps),
-
                 "-c:a", "aac",
                 "-b:a", "192k",
                 "-ar", "48000",
-
                 "-t", String(finalDuration),
-
                 "-movflags", "+faststart",
-
                 OUTPUT_NAME
             ];
 
             updateProgress(65);
+            updateStatus(`جاري إنشاء الفيديو ${quality}p / ${fps} FPS...`);
 
-            updateStatus(
-                `إنشاء الفيديو: ${quality}p / ${fps} FPS...`
-            );
+            const result = await ffmpeg.exec(args);
 
-            await ffmpeg.exec(args);
+            if (result !== 0) {
+                throw new Error("فشل FFmpeg في إنشاء الفيديو.");
+            }
 
             updateProgress(90);
-            updateStatus("تجهيز ملف التحميل...");
+            updateStatus("جاري تجهيز ملف التحميل...");
 
             const outputData = await ffmpeg.readFile(OUTPUT_NAME);
 
