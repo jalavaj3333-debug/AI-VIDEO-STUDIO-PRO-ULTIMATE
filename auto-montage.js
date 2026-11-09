@@ -6,6 +6,24 @@ document.addEventListener("DOMContentLoaded", () => {
     const downloadLink = document.getElementById("autoMontageDownload");
     const musicInput = document.getElementById("musicInput");
     const musicVolume = document.getElementById("musicVolume");
+    const originalVolumeInput = document.getElementById("originalVolume");
+const musicVolumeValue = document.getElementById("musicVolumeValue");
+const originalVolumeValue = document.getElementById("originalVolumeValue");
+
+function updateVolumeLabels() {
+    if (musicVolumeValue && musicVolume) {
+        musicVolumeValue.textContent = musicVolume.value + "%";
+    }
+
+    if (originalVolumeValue && originalVolumeInput) {
+        originalVolumeValue.textContent = originalVolumeInput.value + "%";
+    }
+}
+
+musicVolume?.addEventListener("input", updateVolumeLabels);
+originalVolumeInput?.addEventListener("input", updateVolumeLabels);
+
+updateVolumeLabels();
 
     if (!startButton) {
         console.warn("Auto Montage button not found.");
