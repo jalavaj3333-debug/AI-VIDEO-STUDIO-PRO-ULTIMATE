@@ -10,14 +10,18 @@ let mergeOutputURL = null;
 let isMerging = false;
 
 function getFFmpeg() {
-    if (
-        window.videoFFmpeg &&
-        window.videoFFmpegLoaded
-    ) {
-        return window.videoFFmpeg;
-    }
+    return window.videoFFmpegLoaded && window.videoFFmpeg
+        ? window.videoFFmpeg
+        : null;
+}
 
-    return null;
+function setMergeStatus(message) {
+    mergeStatus.textContent = message;
+}
+
+function setMergeProgress(value) {
+    mergeProgress.style.width =
+        Math.max(0, Math.min(100, value)) + "%";
 }
 
 if (
@@ -27,103 +31,121 @@ if (
     mergeProgress &&
     mergeDownload
 ) {
-
     mergeInput.addEventListener("change", () => {
         mergeFiles = Array.from(mergeInput.files || [])
-            .filter(file => file.type.startsWith("video/"));
-
-        mergeStatus.textContent = mergeFiles.length >= 2
-            ? `تم اختيار ${mergeFiles.length} فيديوهات`
-            : "اختار على الأقل جوج فيديوهات.";
+            .filter(file =>
+                file.type.startsWith("video/") ||
+                /\.(mp4|mov|mkv|webm|avi|m4v)$/i.test(file.name)
+            );
 
         mergeDownload.hidden = true;
+
+        if (mergeOutputURL) {
+            URL.revokeObjectURL(mergeOutputURL);
+            mergeOutputURL = null;
+        }
+
+        setMergeProgress(0);
+
+        setMergeStatus(
+            mergeFiles.length >= 2
+                ? `تم اختيار ${mergeFiles.length} فيديوهات. جاهز للدمج.`
+                : "اختار على الأقل جوج فيديوهات."
+        );
     });
 
     mergeButton.addEventListener("click", async () => {
-
         if (isMerging) return;
 
         if (mergeFiles.length < 2) {
-            mergeStatus.textContent =
-                "خاصك تختار على الأقل جوج فيديوهات.";
+            setMergeStatus("خاصك تختار على الأقل جوج فيديوهات.");
             return;
         }
 
         const engine = getFFmpeg();
 
         if (!engine) {
-            mergeStatus.textContent =
-                "محرك FFmpeg غير جاهز. رجع لأداة التقطيع وحمّل المحرك أولاً.";
+            setMergeStatus(
+                "حمّل محرك FFmpeg أولاً من أداة التقطيع."
+            );
             return;
         }
 
         isMerging = true;
         mergeButton.disabled = true;
-        mergeProgress.style.width = "0%";
+        mergeInput.disabled = true;
         mergeDownload.hidden = true;
+        setMergeProgress(0);
 
         const inputNames = [];
-        const filesToClean = [
-            "merge_list.txt",
-            "MERGED_VIDEO.mp4"
-        ];
+        const outputName = "AI_STUDIO_MERGED.mp4";
+        const listName = "merge_list.txt";
 
         try {
-
-            mergeStatus.textContent =
-                "جاري تجهيز الفيديوهات...";
+            setMergeStatus("جاري تجهيز الفيديوهات...");
 
             for (let i = 0; i < mergeFiles.length; i++) {
+                const file = mergeFiles[i];
+                const extension =
+                    file.name.split(".").pop().toLowerCase();
 
-                const name = `merge_${i}.mp4`;
+                const safeExtension =
+                    /^[a-z0-9]+$/.test(extension)
+                        ? extension
+                        : "mp4";
+
+                const name = `merge_input_${i}.${safeExtension}`;
 
                 await engine.writeFile(
                     name,
-                    new Uint8Array(
-                        await mergeFiles[i].arrayBuffer()
-                    )
+                    new Uint8Array(await file.arrayBuffer())
                 );
 
                 inputNames.push(name);
-                filesToClean.push(name);
 
-                mergeProgress.style.width =
-                    `${Math.round(((i + 1) / mergeFiles.length) * 30)}%`;
+                setMergeProgress(
+                    ((i + 1) / mergeFiles.length) * 30
+                );
             }
 
-            const list = inputNames
+            const listContent = inputNames
                 .map(name => `file '${name}'`)
                 .join("\n");
 
             await engine.writeFile(
-                "merge_list.txt",
-                new TextEncoder().encode(list)
+                listName,
+                new TextEncoder().encode(listContent)
             );
 
-            mergeStatus.textContent =
-                "جاري دمج الفيديوهات...";
+            setMergeStatus("جاري دمج الفيديوهات...");
 
             const result = await engine.exec([
+                "-y",
                 "-f", "concat",
                 "-safe", "0",
-                "-i", "merge_list.txt",
+                "-i", listName,
                 "-c", "copy",
-                "MERGED_VIDEO.mp4"
+                outputName
             ]);
 
             if (result !== 0) {
                 throw new Error(
-                    "تعذر الدمج. تأكد أن الفيديوهات متوافقة في الترميز والمقاس."
+                    "الفيديوهات غير متوافقة للدمج المباشر. جرّب فيديوهات بنفس الترميز والمقاس."
                 );
             }
 
-            const data = await engine.readFile(
-                "MERGED_VIDEO.mp4"
-            );
+            setMergeStatus("جاري تجهيز الفيديو النهائي...");
+            setMergeProgress(85);
+
+            const data = await engine.readFile(outputName);
 
             const blob = new Blob([data], {
                 type: "video/mp4"
             });
+
+            if (!blob.size) {
+                throw new Error("ملف الفيديو الناتج فارغ.");
+            }
 
             if (mergeOutputURL) {
                 URL.revokeObjectURL(mergeOutputURL);
@@ -132,36 +154,49 @@ if (
             mergeOutputURL = URL.createObjectURL(blob);
 
             mergeDownload.href = mergeOutputURL;
-            mergeDownload.download =
-                "AI-VIDEO-STUDIO-MERGED.mp4";
-
+            mergeDownload.download = "AI-VIDEO-STUDIO-MERGED.mp4";
             mergeDownload.hidden = false;
 
-            mergeProgress.style.width = "100%";
+            setMergeProgress(100);
 
-            mergeStatus.textContent =
-                "تم دمج الفيديوهات بنجاح!";
+            setMergeStatus(
+                `تم الدمج بنجاح! الحجم: ${(blob.size / 1024 / 1024).toFixed(2)} MB`
+            );
 
         } catch (error) {
-
             console.error("Merge Error:", error);
 
-            mergeStatus.textContent =
-                "وقع خطأ: " +
-                (error.message || String(error));
+            setMergeProgress(0);
+
+            setMergeStatus(
+                "وقع خطأ أثناء الدمج: " +
+                (error?.message || String(error))
+            );
 
         } finally {
-
-            for (const name of filesToClean) {
+            for (const name of [
+                ...inputNames,
+                listName,
+                outputName
+            ]) {
                 try {
                     await engine.deleteFile(name);
-                } catch (e) {
-                    // تجاهل الملفات غير الموجودة
+                } catch (_) {
+                    // الملف غير موجود أو تم حذفه
                 }
             }
 
             mergeButton.disabled = false;
+            mergeInput.disabled = false;
             isMerging = false;
         }
     });
 }
+
+window.addEventListener("beforeunload", () => {
+    if (mergeOutputURL) {
+        URL.revokeObjectURL(mergeOutputURL);
+    }
+});
+
+console.log("AI VIDEO STUDIO PRO - MERGE EDITOR READY");
