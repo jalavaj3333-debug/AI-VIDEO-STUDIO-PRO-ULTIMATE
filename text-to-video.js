@@ -364,9 +364,6 @@
         body: JSON.stringify({
           prompt: scene.prompt,
 
-          // Prefer a currently listed photorealistic, non-Adult model.
-          models: ['ICBINP - I Can\'t Believe It\'s Not Photography'],
-
           params: {
             width,
             height,
