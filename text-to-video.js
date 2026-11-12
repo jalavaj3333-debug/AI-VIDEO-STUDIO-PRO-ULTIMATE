@@ -243,7 +243,7 @@
   // -------------------------------------------------------
 
   // Set this to the deployed Cloudflare Worker URL after setup.
-  const IMAGE_API_URL = 'https://YOUR-WORKER-NAME.YOUR-SUBDOMAIN.workers.dev';
+  const IMAGE_API_URL = 'https://ai-video-studio-image-api.jalavaj-3333.workers.dev';
 
   async function requestCloudflareImage(scene, index) {
     if (IMAGE_API_URL.includes('YOUR-WORKER-NAME')) {
