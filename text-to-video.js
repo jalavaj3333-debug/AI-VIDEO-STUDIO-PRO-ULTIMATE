@@ -52,10 +52,12 @@
   function ratioSize() {
     const ratio = $('videoRatio')?.value;
 
-    if (ratio === '9:16') return [512, 768];
-    if (ratio === '1:1') return [640, 640];
+    // Keep both dimensions at or below 576px to avoid AI Horde's
+    // high-resolution kudos requirement for anonymous clients.
+    if (ratio === '9:16') return [324, 576];
+    if (ratio === '1:1') return [512, 512];
 
-    return [768, 512];
+    return [576, 324];
   }
 
   // -------------------------------------------------------
