@@ -553,34 +553,77 @@ document.addEventListener("DOMContentLoaded", () => {
 
     });
 
+   
     // =====================================
-    // TOOL BUTTONS
+    // TOOL BUTTONS - CONNECT REAL SECTIONS
     // =====================================
 
-    const toolMessages = {
-
-        text: "محرك تحويل النص إلى فيديو قيد التطوير.",
-        image: "محرك تحريك الصور قيد التطوير.",
-        editor: "استوديو المونتاج جاهز للتجربة.",
-        audio: "أدوات الصوت قيد التطوير.",
-        voice: "محرك التعليق الصوتي قيد التطوير.",
-        music: "أداة الموسيقى قيد التطوير."
-
+    const toolSections = {
+        text: "text-to-video",
+        image: "image-to-video",
+        editor: "editor",
+        audio: "audio",
+        montage: "smart-montage"
     };
 
-    document.querySelectorAll(".tool-btn[data-tool]").forEach(button => {
+    function openStudioSection(sectionId) {
+        const section = document.getElementById(sectionId);
 
-        button.addEventListener("click", () => {
+        if (!section) {
+            console.error("Section not found:", sectionId);
+            alert("القسم غير موجود: " + sectionId);
+            return;
+        }
 
-            const tool = button.dataset.tool;
-
-            if (toolMessages[tool]) {
-                alert(toolMessages[tool]);
-            }
-
+        section.scrollIntoView({
+            behavior: "smooth",
+            block: "start"
         });
 
+        document.querySelectorAll(".menu-item").forEach(item => {
+            item.classList.remove("active");
+
+            if (item.getAttribute("href") === "#" + sectionId) {
+                item.classList.add("active");
+            }
+        });
+
+        document.querySelector(".sidebar")?.classList.remove("open");
+    }
+
+    document.querySelectorAll(".tool-btn[data-tool]").forEach(button => {
+        button.addEventListener("click", event => {
+            event.preventDefault();
+
+            const tool = button.dataset.tool;
+            const sectionId = toolSections[tool];
+
+            if (!sectionId) {
+                console.warn("Tool not connected yet:", tool);
+                alert("هاد الأداة مازال ما مربوطةش بقسم فالموقع.");
+                return;
+            }
+
+            openStudioSection(sectionId);
+        });
     });
+
+    // =====================================
+    // CONNECT MENU LINKS TO SECTIONS
+    // =====================================
+
+    document.querySelectorAll(".menu-item[href^='#']").forEach(link => {
+        link.addEventListener("click", event => {
+            const sectionId = link.getAttribute("href").substring(1);
+
+            if (document.getElementById(sectionId)) {
+                event.preventDefault();
+                openStudioSection(sectionId);
+            }
+        });
+    });
+
+    console.log("STUDIO TOOLS NAVIGATION CONNECTED!");
 
     // =====================================
     // INITIALIZE
