@@ -1,7 +1,7 @@
 
 /* =========================================================
    AI VIDEO STUDIO PRO
-   Smart Script Analysis + AI Horde Image Generation
+   Smart Script Analysis + Cloudflare FLUX Image Generation
    Scene continuity + Retry + Manual Upload + Video Export
    ========================================================= */
 
@@ -239,30 +239,67 @@
   }
 
   // -------------------------------------------------------
-  // 3. AI HORDE API
+  // 3. CLOUDFLARE WORKERS AI IMAGE API
   // -------------------------------------------------------
 
-  async function apiRequest(url, options = {}) {
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        apikey: HORDE_KEY,
-        'Client-Agent': CLIENT_AGENT,
-        ...(options.headers || {})
-      }
+  // Set this to the deployed Cloudflare Worker URL after setup.
+  const IMAGE_API_URL = 'https://YOUR-WORKER-NAME.YOUR-SUBDOMAIN.workers.dev';
+
+  async function requestCloudflareImage(scene, index) {
+    if (IMAGE_API_URL.includes('YOUR-WORKER-NAME')) {
+      throw new Error('خاصنا نكملو إعداد Cloudflare Worker أولاً.');
+    }
+
+    const [width, height] = ratioSize();
+    const response = await fetch(IMAGE_API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        prompt: scene.prompt,
+        width,
+        height
+      })
     });
 
     const body = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      throw new Error(
-        body.message ||
-        body.error ||
-        `HTTP ${response.status}`
-      );
+      throw new Error(body.error || `Cloudflare HTTP ${response.status}`);
     }
 
-    return body;
+    if (!body.image) {
+      throw new Error('الخدمة ما رجعاتش الصورة.');
+    }
+
+    return await createLocalImage(body.image);
+  }
+
+  async function loadSceneImage(scene, index) {
+    let lastError;
+
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        say(`المشهد ${index + 1}: توليد الصورة بمحرك FLUX، محاولة ${attempt}...`);
+
+        const localImage = await requestCloudflareImage(scene, index);
+
+        if (scene.imageUrl) URL.revokeObjectURL(scene.imageUrl);
+        scene.image = localImage.image;
+        scene.imageUrl = localImage.url;
+        return scene.image;
+
+      } catch (error) {
+        lastError = error;
+        console.error(`Scene ${index + 1}, attempt ${attempt}:`, error);
+
+        if (attempt < MAX_RETRIES) {
+          say(`المشهد ${index + 1}: تعذر التوليد، إعادة المحاولة...`);
+          await wait(2000);
+        }
+      }
+    }
+
+    throw lastError || new Error('فشل توليد الصورة.');
   }
 
   async function createLocalImage(imageData) {
