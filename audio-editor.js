@@ -93,10 +93,10 @@
             : fallback;
     }
 
-    function getSeconds(element, fallback = 0) {
+    function getSeconds(element, fallback = 0, maximum = 10) {
         const value = Number(element?.value ?? fallback);
         return Number.isFinite(value)
-            ? Math.max(0, Math.min(10, value))
+            ? Math.max(0, Math.min(maximum, value))
             : fallback;
     }
 
@@ -193,8 +193,7 @@
         if (videoInput) videoInput.value = '';
 
         if (videoPreview) {
-            const oldURL = previewURLs.generatedVideo;
-            revokeURL(oldURL);
+            revokeURL(previewURLs.generatedVideo);
 
             const url = URL.createObjectURL(selectedVideo);
             videoPreview.src = url;
@@ -252,13 +251,18 @@
         if (timerInterval) clearInterval(timerInterval);
 
         timerInterval = null;
-        updateTimer();
+
+        if (recordingStartedAt && micTimer) {
+            micTimer.textContent = formatTime(
+                Date.now() - recordingStartedAt
+            );
+        }
+
         recordingStartedAt = 0;
     }
 
     function resetTimer() {
         stopTimer();
-
         if (micTimer) micTimer.textContent = '00:00';
     }
 
@@ -597,32 +601,60 @@
         }
     }
 
-    function addFadeFilters(filters, inputLabel, outputLabel, fadeIn, fadeOut, videoDuration) {
+    function addFadeFilters(
+        filters,
+        inputLabel,
+        outputLabel,
+        fadeIn,
+        fadeOut,
+        trackDuration
+    ) {
         let currentLabel = inputLabel;
         let count = 0;
 
-        if (fadeIn > 0) {
+        const safeFadeIn = Math.min(
+            Math.max(0, fadeIn),
+            Math.max(0, trackDuration)
+        );
+
+        const safeFadeOut = Math.min(
+            Math.max(0, fadeOut),
+            Math.max(0, trackDuration)
+        );
+
+        if (safeFadeIn > 0) {
             const nextLabel = `fade_${outputLabel}_${count++}`;
 
             filters.push(
-                `${currentLabel}afade=t=in:st=0:d=${fadeIn}[${nextLabel}]`
+                `${currentLabel}afade=t=in:st=0:d=${safeFadeIn}[${nextLabel}]`
             );
 
             currentLabel = `[${nextLabel}]`;
         }
 
-        if (fadeOut > 0 && videoDuration > fadeOut) {
+        if (safeFadeOut > 0) {
             const nextLabel = `fade_${outputLabel}_${count++}`;
-            const fadeStart = Math.max(0, videoDuration - fadeOut);
+            const fadeStart = Math.max(
+                0,
+                trackDuration - safeFadeOut
+            );
 
             filters.push(
-                `${currentLabel}afade=t=out:st=${fadeStart}:d=${fadeOut}[${nextLabel}]`
+                `${currentLabel}afade=t=out:st=${fadeStart}:d=${safeFadeOut}[${nextLabel}]`
             );
 
             currentLabel = `[${nextLabel}]`;
         }
 
         filters.push(`${currentLabel}anull[${outputLabel}]`);
+    }
+
+    function getMediaDuration(element, fallback) {
+        const duration = Number(element?.duration);
+
+        return Number.isFinite(duration) && duration > 0
+            ? duration
+            : fallback;
     }
 
     // -----------------------------
@@ -670,18 +702,25 @@
             await writeInput(engine, selectedVideo, videoFile);
             filesToDelete.push(videoFile);
 
-            // Read duration from the selected video preview.
-            let videoDuration = Number(videoPreview?.duration);
+            const videoDuration = getMediaDuration(
+                videoPreview,
+                0
+            );
 
-            if (!Number.isFinite(videoDuration) || videoDuration <= 0) {
-                throw new Error('ما قدرناش نحددو مدة الفيديو. شغّل معاينة الفيديو وانتظر حتى تحمل معلوماته، ثم أعد المحاولة.');
+            if (!videoDuration) {
+                throw new Error(
+                    'ما قدرناش نحددو مدة الفيديو. انتظر حتى تحمل معلومات المعاينة ثم أعد المحاولة.'
+                );
             }
 
             let originalExists = false;
 
             if (keepOriginal?.checked) {
                 say('كنفحصو الصوت الأصلي...');
-                originalExists = await hasAudioStream(engine, videoFile);
+                originalExists = await hasAudioStream(
+                    engine,
+                    videoFile
+                );
             }
 
             const inputArgs = ['-i', videoFile];
@@ -690,6 +729,7 @@
 
             let inputIndex = 1;
 
+            // BACKGROUND MUSIC
             if (selectedMusic) {
                 say('المرحلة 2/5: تجهيز الموسيقى...');
                 await writeInput(engine, selectedMusic, musicFile);
@@ -704,6 +744,7 @@
                     `[${inputIndex}:a]volume=${clampVolume(musicVolume, 0.25)}[music_volume]`
                 );
 
+                // Music is looped, so its fade-out is at the end of the video.
                 addFadeFilters(
                     filters,
                     '[music_volume]',
@@ -717,6 +758,7 @@
                 inputIndex++;
             }
 
+            // VOICE OVER
             if (selectedVoice) {
                 say('المرحلة 3/5: تجهيز التعليق الصوتي...');
                 await writeInput(engine, selectedVoice, voiceFile);
@@ -727,23 +769,30 @@
                 const fadeIn = getSeconds(voiceFadeIn, 0.5);
                 const fadeOut = getSeconds(voiceFadeOut, 1);
 
+                const voiceDuration = getMediaDuration(
+                    voicePreview,
+                    videoDuration
+                );
+
                 filters.push(
                     `[${inputIndex}:a]volume=${clampVolume(voiceVolume, 1)}[voice_volume]`
                 );
 
+                // Voice fades out at the end of its own duration.
                 addFadeFilters(
                     filters,
                     '[voice_volume]',
                     'voice_final',
                     fadeIn,
                     fadeOut,
-                    videoDuration
+                    Math.min(voiceDuration, videoDuration)
                 );
 
                 audioLabels.push('[voice_final]');
                 inputIndex++;
             }
 
+            // ORIGINAL VIDEO AUDIO
             if (originalExists) {
                 filters.push(
                     `[0:a]volume=${clampVolume(originalVolume, 1)}[original]`
@@ -764,7 +813,6 @@
                 );
             }
 
-            // Keep the output audio running until the video ends.
             filters.push('[mixed]apad[aout]');
 
             const args = [
