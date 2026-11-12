@@ -33,6 +33,9 @@
             <a href="#trim-editor" class="menu-item"><span>◧</span> قص الفيديو</a>
             <a href="#mergeStudio" class="menu-item"><span>🎬</span> دمج الفيديوهات</a>
             <a href="#audio" class="menu-item"><span>♫</span> Audio Studio Pro</a>
+            <a href="#extract-audio" class="menu-item">
+    <span>🎧</span> استخراج الصوت MP3
+</a>
             <a href="#ai-tools-hub" class="menu-item"><span>✦</span> AI Tools Hub</a>
             <a href="#prompt-builder" class="menu-item"><span>🤖</span> AI Prompt Builder</a>
             <a href="#projects" class="menu-item"><span>▤</span> مشاريعي</a>
@@ -493,7 +496,41 @@
                 <a id="audioDownload" hidden download="AI-STUDIO-AUDIO.mp4">⬇ تحميل الفيديو النهائي</a>
             </div>
         </section>
+<!-- EXTRACT AUDIO STUDIO -->
+<section class="section" id="extract-audio">
+    <div class="section-heading">
+        <div>
+            <h2>🎧 Extract Audio Studio</h2>
+            <p>استخراج الصوت من الفيديو وتحميله بصيغة MP3.</p>
+        </div>
+    </div>
 
+    <div class="trim-box">
+        <h3>📁 اختيار الفيديو</h3>
+
+        <input type="file" id="extractAudioInput" accept="video/*">
+
+        <p id="extractAudioFileName">لم يتم اختيار فيديو</p>
+
+        <button id="extractAudioButton" type="button">
+            🎵 استخراج الصوت MP3
+        </button>
+
+        <div class="trim-progress">
+            <div id="extractAudioProgress"></div>
+        </div>
+
+        <p id="extractAudioStatus" aria-live="polite">
+            اختار فيديو للبدء.
+        </p>
+
+        <a id="extractAudioDownload"
+           hidden
+           download="AI-EXTRACTED-AUDIO.mp3">
+            ⬇ تحميل الصوت MP3
+        </a>
+    </div>
+</section>
         <!-- AI TOOLS HUB -->
         <section class="section" id="ai-tools-hub">
             <div id="aiToolsHub">
@@ -668,6 +705,6 @@
 <script src="ai-tools-hub.js"></script>
 <script src="prompt-builder.js"></script>
 <script src="automation-connector.js"></script>
-
+<script src="extract-audio.js"></script>
 </body>
 </html>
