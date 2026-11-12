@@ -20,7 +20,10 @@
     <aside class="sidebar">
         <div class="logo">
             <span class="logo-icon">✦</span>
-            <div><h2>AI VIDEO</h2><small>STUDIO PRO</small></div>
+            <div>
+                <h2>AI VIDEO</h2>
+                <small>STUDIO PRO</small>
+            </div>
         </div>
 
         <div class="menu-title">القائمة الرئيسية</div>
@@ -33,12 +36,11 @@
             <a href="#trim-editor" class="menu-item"><span>◧</span> قص الفيديو</a>
             <a href="#mergeStudio" class="menu-item"><span>🎬</span> دمج الفيديوهات</a>
             <a href="#audio" class="menu-item"><span>♫</span> Audio Studio Pro</a>
-            <a href="#extract-audio" class="menu-item">
-    <span>🎧</span> استخراج الصوت MP3
-</a>
+            <a href="#extract-audio" class="menu-item"><span>🎧</span> استخراج الصوت MP3</a>
             <a href="#ai-tools-hub" class="menu-item"><span>✦</span> AI Tools Hub</a>
             <a href="#prompt-builder" class="menu-item"><span>🤖</span> AI Prompt Builder</a>
             <a href="#projects" class="menu-item"><span>▤</span> مشاريعي</a>
+            <a href="#automationStudio" class="menu-item"><span>⚙</span> Automation Studio</a>
         </nav>
 
         <div class="sidebar-bottom">
@@ -64,6 +66,7 @@
             </div>
         </header>
 
+        <!-- HERO -->
         <section class="hero">
             <div class="hero-content">
                 <span class="hero-label">✦ YOUR CREATIVE AI STUDIO</span>
@@ -298,27 +301,13 @@
                             صوت الفيديو الأصلي
                             <span id="autoMontageOriginalVolumeValue">100%</span>
                         </label>
-                        <input
-                            type="range"
-                            id="autoMontageOriginalVolume"
-                            min="0"
-                            max="200"
-                            value="100"
-                            step="5"
-                        >
+                        <input type="range" id="autoMontageOriginalVolume" min="0" max="200" value="100" step="5">
 
                         <label for="autoMontageMusicVolume">
                             الموسيقى الخلفية
                             <span id="autoMontageMusicVolumeValue">25%</span>
                         </label>
-                        <input
-                            type="range"
-                            id="autoMontageMusicVolume"
-                            min="0"
-                            max="100"
-                            value="25"
-                            step="1"
-                        >
+                        <input type="range" id="autoMontageMusicVolume" min="0" max="100" value="25" step="1">
                     </div>
 
                     <button id="smartAutoMontage" type="button">
@@ -326,24 +315,14 @@
                     </button>
 
                     <div class="auto-montage-progress">
-                        <div
-                            id="autoMontageProgress"
-                            role="progressbar"
-                            aria-valuemin="0"
-                            aria-valuemax="100"
-                            aria-valuenow="0"
-                        ></div>
+                        <div id="autoMontageProgress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
                     </div>
 
                     <p id="autoMontageStatus" aria-live="polite">
                         أضف الفيديوهات إلى Timeline ثم ابدأ المونتاج.
                     </p>
 
-                    <a
-                        id="autoMontageDownload"
-                        hidden
-                        download="SMAILLY_AI_AUTO_MONTAGE.mp4"
-                    >
+                    <a id="autoMontageDownload" hidden download="SMAILLY_AI_AUTO_MONTAGE.mp4">
                         ⬇ تحميل الفيديو النهائي
                     </a>
                 </div>
@@ -425,6 +404,8 @@
             </div>
 
             <div class="audio-studio-grid">
+
+                <!-- ORIGINAL VIDEO -->
                 <div class="audio-card">
                     <h3>🎬 الفيديو الأصلي</h3>
                     <input type="file" id="audioVideoInput" accept="video/*">
@@ -441,6 +422,7 @@
                     <span id="originalVolumeValue">100%</span>
                 </div>
 
+                <!-- BACKGROUND MUSIC -->
                 <div class="audio-card">
                     <h3>🎼 الموسيقى الخلفية</h3>
                     <input type="file" id="musicInput" accept="audio/*">
@@ -450,8 +432,20 @@
                     <label for="musicVolume">مستوى الموسيقى</label>
                     <input type="range" id="musicVolume" min="0" max="2" step="0.05" value="0.25">
                     <span id="musicVolumeValue">25%</span>
+
+                    <!-- MUSIC FADE CONTROLS -->
+                    <div class="fade-controls">
+                        <h4>🎚️ تأثيرات الموسيقى</h4>
+
+                        <label for="musicFadeIn">Fade In - دخول تدريجي (ثواني)</label>
+                        <input type="number" id="musicFadeIn" min="0" max="10" step="0.5" value="2">
+
+                        <label for="musicFadeOut">Fade Out - خروج تدريجي (ثواني)</label>
+                        <input type="number" id="musicFadeOut" min="0" max="10" step="0.5" value="3">
+                    </div>
                 </div>
 
+                <!-- VOICE OVER -->
                 <div class="audio-card">
                     <h3>🎙️ التعليق الصوتي</h3>
                     <input type="file" id="voiceInput" accept="audio/*">
@@ -461,6 +455,17 @@
                     <label for="voiceVolume">مستوى التعليق الصوتي</label>
                     <input type="range" id="voiceVolume" min="0" max="2" step="0.05" value="1">
                     <span id="voiceVolumeValue">100%</span>
+
+                    <!-- VOICE FADE CONTROLS -->
+                    <div class="fade-controls">
+                        <h4>🎚️ تأثيرات التعليق الصوتي</h4>
+
+                        <label for="voiceFadeIn">Fade In - دخول تدريجي (ثواني)</label>
+                        <input type="number" id="voiceFadeIn" min="0" max="10" step="0.5" value="0.5">
+
+                        <label for="voiceFadeOut">Fade Out - خروج تدريجي (ثواني)</label>
+                        <input type="number" id="voiceFadeOut" min="0" max="10" step="0.5" value="1">
+                    </div>
                 </div>
             </div>
 
@@ -489,48 +494,51 @@
                 <audio id="recordedVoicePreview" controls hidden></audio>
             </div>
 
+            <!-- AUDIO EXPORT -->
             <div class="audio-export-box">
                 <button id="exportAudioMix" type="button">🎬 إنشاء الفيديو بالصوت الجديد</button>
-                <div class="audio-progress"><div id="audioProgressBar"></div></div>
+                <div class="audio-progress">
+                    <div id="audioProgressBar"></div>
+                </div>
                 <p id="audioStatus">اختار الفيديو والموسيقى للبدء.</p>
                 <a id="audioDownload" hidden download="AI-STUDIO-AUDIO.mp4">⬇ تحميل الفيديو النهائي</a>
             </div>
         </section>
-<!-- EXTRACT AUDIO STUDIO -->
-<section class="section" id="extract-audio">
-    <div class="section-heading">
-        <div>
-            <h2>🎧 Extract Audio Studio</h2>
-            <p>استخراج الصوت من الفيديو وتحميله بصيغة MP3.</p>
-        </div>
-    </div>
 
-    <div class="trim-box">
-        <h3>📁 اختيار الفيديو</h3>
+        <!-- EXTRACT AUDIO STUDIO -->
+        <section class="section" id="extract-audio">
+            <div class="section-heading">
+                <div>
+                    <h2>🎧 Extract Audio Studio</h2>
+                    <p>استخراج الصوت من الفيديو وتحميله بصيغة MP3.</p>
+                </div>
+            </div>
 
-        <input type="file" id="extractAudioInput" accept="video/*">
+            <div class="trim-box">
+                <h3>📁 اختيار الفيديو</h3>
 
-        <p id="extractAudioFileName">لم يتم اختيار فيديو</p>
+                <input type="file" id="extractAudioInput" accept="video/*">
 
-        <button id="extractAudioButton" type="button">
-            🎵 استخراج الصوت MP3
-        </button>
+                <p id="extractAudioFileName">لم يتم اختيار فيديو</p>
 
-        <div class="trim-progress">
-            <div id="extractAudioProgress"></div>
-        </div>
+                <button id="extractAudioButton" type="button">
+                    🎵 استخراج الصوت MP3
+                </button>
 
-        <p id="extractAudioStatus" aria-live="polite">
-            اختار فيديو للبدء.
-        </p>
+                <div class="trim-progress">
+                    <div id="extractAudioProgress"></div>
+                </div>
 
-        <a id="extractAudioDownload"
-           hidden
-           download="AI-EXTRACTED-AUDIO.mp3">
-            ⬇ تحميل الصوت MP3
-        </a>
-    </div>
-</section>
+                <p id="extractAudioStatus" aria-live="polite">
+                    اختار فيديو للبدء.
+                </p>
+
+                <a id="extractAudioDownload" hidden download="AI-EXTRACTED-AUDIO.mp3">
+                    ⬇ تحميل الصوت MP3
+                </a>
+            </div>
+        </section>
+
         <!-- AI TOOLS HUB -->
         <section class="section" id="ai-tools-hub">
             <div id="aiToolsHub">
@@ -706,5 +714,6 @@
 <script src="prompt-builder.js"></script>
 <script src="automation-connector.js"></script>
 <script src="extract-audio.js"></script>
+
 </body>
 </html>
