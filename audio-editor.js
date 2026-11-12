@@ -1,6 +1,7 @@
 
 /* AI VIDEO STUDIO PRO — Professional Audio Studio
-   Audio mixing, microphone recording, waveform and MP4 export.
+   Audio mixing, fade effects, microphone recording,
+   waveform and MP4 export.
 */
 (() => {
     'use strict';
@@ -23,6 +24,11 @@
     const musicVolume = $('musicVolume');
     const voiceVolume = $('voiceVolume');
     const keepOriginal = $('keepOriginalAudio');
+
+    const musicFadeIn = $('musicFadeIn');
+    const musicFadeOut = $('musicFadeOut');
+    const voiceFadeIn = $('voiceFadeIn');
+    const voiceFadeOut = $('voiceFadeOut');
 
     const exportButton = $('exportAudioMix');
     const progressBar = $('audioProgressBar');
@@ -84,6 +90,13 @@
         const value = Number(element?.value ?? fallback);
         return Number.isFinite(value)
             ? Math.max(0, Math.min(2, value))
+            : fallback;
+    }
+
+    function getSeconds(element, fallback = 0) {
+        const value = Number(element?.value ?? fallback);
+        return Number.isFinite(value)
+            ? Math.max(0, Math.min(10, value))
             : fallback;
     }
 
@@ -180,6 +193,9 @@
         if (videoInput) videoInput.value = '';
 
         if (videoPreview) {
+            const oldURL = previewURLs.generatedVideo;
+            revokeURL(oldURL);
+
             const url = URL.createObjectURL(selectedVideo);
             videoPreview.src = url;
             videoPreview.hidden = false;
@@ -209,6 +225,7 @@
 
     function formatTime(milliseconds) {
         const seconds = Math.floor(milliseconds / 1000);
+
         return (
             String(Math.floor(seconds / 60)).padStart(2, '0') +
             ':' +
@@ -218,6 +235,7 @@
 
     function updateTimer() {
         if (!recordingStartedAt || !micTimer) return;
+
         micTimer.textContent = formatTime(
             Date.now() - recordingStartedAt
         );
@@ -232,6 +250,7 @@
 
     function stopTimer() {
         if (timerInterval) clearInterval(timerInterval);
+
         timerInterval = null;
         updateTimer();
         recordingStartedAt = 0;
@@ -239,6 +258,7 @@
 
     function resetTimer() {
         stopTimer();
+
         if (micTimer) micTimer.textContent = '00:00';
     }
 
@@ -330,6 +350,7 @@
 
             clearWaveform();
             drawWaveform();
+
         } catch (error) {
             console.warn('Waveform:', error);
         }
@@ -445,6 +466,7 @@
 
                 [micPreview, voicePreview].forEach(preview => {
                     if (!preview) return;
+
                     preview.src = recordedURL;
                     preview.hidden = false;
                     preview.load?.();
@@ -459,6 +481,7 @@
 
                 micSay('التسجيل واجد. تقدر تسمعو أو تدمجو مع الفيديو.');
                 finishRecordingUI();
+                hideOutput();
             };
 
             recorder.start(250);
@@ -493,6 +516,7 @@
         if (!recorder || recorder.state === 'inactive') return;
 
         micSay('كنوقفو التسجيل وكنحفظو الملف...');
+
         if (micStop) micStop.disabled = true;
 
         recorder.stop();
@@ -511,6 +535,7 @@
 
         [micPreview, voicePreview].forEach(preview => {
             if (!preview) return;
+
             preview.pause?.();
             preview.removeAttribute('src');
             preview.hidden = true;
@@ -543,7 +568,7 @@
     clearWaveform();
 
     // -----------------------------
-    // FFmpeg HELPERS
+    // FFMPEG HELPERS
     // -----------------------------
 
     function getExtension(file) {
@@ -557,17 +582,47 @@
     }
 
     async function hasAudioStream(engine, filename) {
-        // FFmpeg returns success if the first audio stream exists
-        // and can be decoded.
-        const result = await engine.exec([
-            '-i', filename,
-            '-map', '0:a:0',
-            '-t', '0.1',
-            '-f', 'null',
-            '-'
-        ]);
+        try {
+            const result = await engine.exec([
+                '-i', filename,
+                '-map', '0:a:0',
+                '-t', '0.1',
+                '-f', 'null',
+                '-'
+            ]);
 
-        return result === 0;
+            return result === 0;
+        } catch (_) {
+            return false;
+        }
+    }
+
+    function addFadeFilters(filters, inputLabel, outputLabel, fadeIn, fadeOut, videoDuration) {
+        let currentLabel = inputLabel;
+        let count = 0;
+
+        if (fadeIn > 0) {
+            const nextLabel = `fade_${outputLabel}_${count++}`;
+
+            filters.push(
+                `${currentLabel}afade=t=in:st=0:d=${fadeIn}[${nextLabel}]`
+            );
+
+            currentLabel = `[${nextLabel}]`;
+        }
+
+        if (fadeOut > 0 && videoDuration > fadeOut) {
+            const nextLabel = `fade_${outputLabel}_${count++}`;
+            const fadeStart = Math.max(0, videoDuration - fadeOut);
+
+            filters.push(
+                `${currentLabel}afade=t=out:st=${fadeStart}:d=${fadeOut}[${nextLabel}]`
+            );
+
+            currentLabel = `[${nextLabel}]`;
+        }
+
+        filters.push(`${currentLabel}anull[${outputLabel}]`);
     }
 
     // -----------------------------
@@ -582,8 +637,9 @@
             return;
         }
 
-        if (!selectedMusic && !selectedVoice) {
-            say('زيد الموسيقى أو التعليق الصوتي على الأقل.');
+        if (!selectedMusic && !selectedVoice &&
+            !keepOriginal?.checked) {
+            say('زيد الموسيقى أو التعليق الصوتي، أو فعّل الصوت الأصلي.');
             return;
         }
 
@@ -610,64 +666,87 @@
         const outputFile = 'audio_studio_final.mp4';
 
         try {
-            say('المرحلة 1/4: تجهيز الفيديو...');
+            say('المرحلة 1/5: تجهيز الفيديو...');
             await writeInput(engine, selectedVideo, videoFile);
             filesToDelete.push(videoFile);
+
+            // Read duration from the selected video preview.
+            let videoDuration = Number(videoPreview?.duration);
+
+            if (!Number.isFinite(videoDuration) || videoDuration <= 0) {
+                throw new Error('ما قدرناش نحددو مدة الفيديو. شغّل معاينة الفيديو وانتظر حتى تحمل معلوماته، ثم أعد المحاولة.');
+            }
 
             let originalExists = false;
 
             if (keepOriginal?.checked) {
-                say('كنفحصو واش الفيديو فيه صوت أصلي...');
+                say('كنفحصو الصوت الأصلي...');
                 originalExists = await hasAudioStream(engine, videoFile);
             }
 
             const inputArgs = ['-i', videoFile];
-            const audioLabels = [];
             const filters = [];
+            const audioLabels = [];
 
             let inputIndex = 1;
 
             if (selectedMusic) {
-                say('المرحلة 2/4: تجهيز الموسيقى...');
+                say('المرحلة 2/5: تجهيز الموسيقى...');
                 await writeInput(engine, selectedMusic, musicFile);
                 filesToDelete.push(musicFile);
 
-                // Loop background music; output is still limited
-                // by the original video duration.
                 inputArgs.push('-stream_loop', '-1', '-i', musicFile);
 
+                const fadeIn = getSeconds(musicFadeIn, 2);
+                const fadeOut = getSeconds(musicFadeOut, 3);
+
                 filters.push(
-                    `[${inputIndex}:a]volume=${clampVolume(
-                        musicVolume, 0.25
-                    )}[music]`
+                    `[${inputIndex}:a]volume=${clampVolume(musicVolume, 0.25)}[music_volume]`
                 );
 
-                audioLabels.push('[music]');
+                addFadeFilters(
+                    filters,
+                    '[music_volume]',
+                    'music_final',
+                    fadeIn,
+                    fadeOut,
+                    videoDuration
+                );
+
+                audioLabels.push('[music_final]');
                 inputIndex++;
             }
 
             if (selectedVoice) {
-                say('كنجهزو التعليق الصوتي...');
+                say('المرحلة 3/5: تجهيز التعليق الصوتي...');
                 await writeInput(engine, selectedVoice, voiceFile);
                 filesToDelete.push(voiceFile);
 
                 inputArgs.push('-i', voiceFile);
 
+                const fadeIn = getSeconds(voiceFadeIn, 0.5);
+                const fadeOut = getSeconds(voiceFadeOut, 1);
+
                 filters.push(
-                    `[${inputIndex}:a]volume=${clampVolume(
-                        voiceVolume, 1
-                    )}[voice]`
+                    `[${inputIndex}:a]volume=${clampVolume(voiceVolume, 1)}[voice_volume]`
                 );
 
-                audioLabels.push('[voice]');
+                addFadeFilters(
+                    filters,
+                    '[voice_volume]',
+                    'voice_final',
+                    fadeIn,
+                    fadeOut,
+                    videoDuration
+                );
+
+                audioLabels.push('[voice_final]');
                 inputIndex++;
             }
 
             if (originalExists) {
                 filters.push(
-                    `[0:a]volume=${clampVolume(
-                        originalVolume, 1
-                    )}[original]`
+                    `[0:a]volume=${clampVolume(originalVolume, 1)}[original]`
                 );
 
                 audioLabels.unshift('[original]');
@@ -685,8 +764,7 @@
                 );
             }
 
-            // Pad audio with silence when voice/music ends early.
-            // -shortest then ends the MP4 with the original video.
+            // Keep the output audio running until the video ends.
             filters.push('[mixed]apad[aout]');
 
             const args = [
@@ -696,30 +774,30 @@
                 filters.join(';'),
                 '-map', '0:v:0',
                 '-map', '[aout]',
+                '-t', String(videoDuration),
                 '-c:v', 'libx264',
                 '-preset', 'ultrafast',
                 '-crf', '23',
                 '-pix_fmt', 'yuv420p',
                 '-c:a', 'aac',
                 '-b:a', '192k',
-                '-shortest',
                 '-movflags', '+faststart',
                 outputFile
             ];
 
             setProgress(35);
-            say('المرحلة 3/4: دمج الصوت والموسيقى مع الفيديو...');
+            say('المرحلة 4/5: دمج الصوت وتطبيق Fade In / Fade Out...');
 
             const result = await engine.exec(args);
 
-            if (result !== 0) {
+            if (typeof result === 'number' && result !== 0) {
                 throw new Error(
                     'FFmpeg ما قدرش يكمل الدمج. تأكد من صيغة ملفات الصوت والفيديو.'
                 );
             }
 
             setProgress(85);
-            say('المرحلة 4/4: تجهيز ملف MP4 النهائي...');
+            say('المرحلة 5/5: تجهيز ملف MP4 النهائي...');
 
             const outputData = await engine.readFile(outputFile);
 
@@ -772,7 +850,6 @@
         stopWaveform();
 
         Object.values(previewURLs).forEach(revokeURL);
-        Object.values(previewURLs).forEach(() => {});
 
         revokeURL(outputURL);
         revokeURL(recordedURL);
