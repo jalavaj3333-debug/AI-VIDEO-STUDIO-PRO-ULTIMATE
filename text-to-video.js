@@ -190,9 +190,7 @@
           : 'vertical portrait composition';
 
     return [
-      'Create ONE single standalone photograph: one camera shot, one frame, one moment.',
-      'The entire canvas must show one continuous scene, not a collection of pictures.',
-      'Use a photorealistic live-action film still, not an illustration or layout design.',
+      'Create ONE single cinematic photorealistic movie frame.',
       '',
       'STRICT SCENE ACCURACY:',
       'Illustrate only the event described in the source scene.',
@@ -232,13 +230,7 @@
       '"""',
       '',
       'Translate the meaning of the source into a faithful visual image.',
-      'Visual accuracy is more important than artistic decoration.',
-      '',
-      '###',
-      'collage, photo grid, contact sheet, storyboard, comic strip, diptych, triptych,',
-      'multiple panels, split screen, tiled images, picture-in-picture, montage layout,',
-      'four images in one image, repeated subjects, multiple camera shots, frames with borders,',
-      'captions, text, typography, labels, watermark, logo, poster design'
+      'Visual accuracy is more important than artistic decoration.'
     ].join('\n');
   }
 
