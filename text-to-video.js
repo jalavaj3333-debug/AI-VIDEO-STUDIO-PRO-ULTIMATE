@@ -54,10 +54,12 @@
 
     // Keep both dimensions at or below 576px to avoid AI Horde's
     // high-resolution kudos requirement for anonymous clients.
-    if (ratio === '9:16') return [324, 576];
+    // AI Horde / Stable Diffusion dimensions should use multiples of 64.
+    // Keep both dimensions at or below 576px for the anonymous free tier.
+    if (ratio === '9:16') return [320, 576];
     if (ratio === '1:1') return [512, 512];
 
-    return [576, 324];
+    return [576, 320];
   }
 
   // -------------------------------------------------------
