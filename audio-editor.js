@@ -1,7 +1,7 @@
 
 /* AI VIDEO STUDIO PRO — Professional Audio Studio
    Audio mixing, fade effects, microphone recording,
-   waveform and MP4 export.
+   waveform, MP4 export and professional audio effects.
 */
 (() => {
     'use strict';
@@ -29,6 +29,12 @@
     const musicFadeOut = $('musicFadeOut');
     const voiceFadeIn = $('voiceFadeIn');
     const voiceFadeOut = $('voiceFadeOut');
+
+    // Professional audio effects
+    const audioEcho = $('audioEcho');
+    const audioReverb = $('audioReverb');
+    const audioBassBoost = $('audioBassBoost');
+    const audioNoiseReduction = $('audioNoiseReduction');
 
     const exportButton = $('exportAudioMix');
     const progressBar = $('audioProgressBar');
@@ -658,6 +664,59 @@
     }
 
     // -----------------------------
+    // PROFESSIONAL AUDIO EFFECTS
+    // -----------------------------
+
+    function addAudioEffects(filters) {
+        let currentLabel = '[mixed]';
+        let effectNumber = 0;
+        const appliedEffects = [];
+
+        function addEffect(filter, name) {
+            const nextLabel = `audio_effect_${effectNumber++}`;
+
+            filters.push(
+                `${currentLabel}${filter}[${nextLabel}]`
+            );
+
+            currentLabel = `[${nextLabel}]`;
+            appliedEffects.push(name);
+        }
+
+        if (audioEcho?.checked) {
+            addEffect(
+                'aecho=0.8:0.9:1000:0.3',
+                'Echo'
+            );
+        }
+
+        if (audioReverb?.checked) {
+            addEffect(
+                'aecho=0.8:0.88:60|120|180:0.25|0.18|0.12',
+                'Reverb'
+            );
+        }
+
+        if (audioBassBoost?.checked) {
+            addEffect(
+                'bass=g=5:f=100:w=0.6',
+                'Bass Boost'
+            );
+        }
+
+        if (audioNoiseReduction?.checked) {
+            addEffect(
+                'afftdn=nf=-25:tn=1',
+                'Noise Reduction'
+            );
+        }
+
+        filters.push(`${currentLabel}apad[aout]`);
+
+        return appliedEffects;
+    }
+
+    // -----------------------------
     // PROFESSIONAL AUDIO EXPORT
     // -----------------------------
 
@@ -744,7 +803,6 @@
                     `[${inputIndex}:a]volume=${clampVolume(musicVolume, 0.25)}[music_volume]`
                 );
 
-                // Music is looped, so its fade-out is at the end of the video.
                 addFadeFilters(
                     filters,
                     '[music_volume]',
@@ -778,7 +836,6 @@
                     `[${inputIndex}:a]volume=${clampVolume(voiceVolume, 1)}[voice_volume]`
                 );
 
-                // Voice fades out at the end of its own duration.
                 addFadeFilters(
                     filters,
                     '[voice_volume]',
@@ -813,7 +870,8 @@
                 );
             }
 
-            filters.push('[mixed]apad[aout]');
+            // Apply selected effects to the final audio mix.
+            const appliedEffects = addAudioEffects(filters);
 
             const args = [
                 '-y',
@@ -834,7 +892,15 @@
             ];
 
             setProgress(35);
-            say('المرحلة 4/5: دمج الصوت وتطبيق Fade In / Fade Out...');
+
+            if (appliedEffects.length) {
+                say(
+                    'المرحلة 4/5: دمج الصوت وتطبيق المؤثرات: ' +
+                    appliedEffects.join(', ')
+                );
+            } else {
+                say('المرحلة 4/5: دمج الصوت وتطبيق Fade In / Fade Out...');
+            }
 
             const result = await engine.exec(args);
 
