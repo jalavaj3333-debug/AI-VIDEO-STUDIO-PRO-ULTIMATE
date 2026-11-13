@@ -410,7 +410,7 @@
       scene.text,
       '',
       'Target: a coherent 5-second photorealistic video.'
-    ].join('\\n');
+    ].join('\n');
   }
 
   // -------------------------------------------------------
