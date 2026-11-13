@@ -389,6 +389,31 @@
   }
 
   // -------------------------------------------------------
+  // MOTION PROMPT PREPARATION (does not generate video)
+  // -------------------------------------------------------
+
+  function makeMotionPrompt(scene, index) {
+    return [
+      'Create a short image-to-video animation from the supplied image.',
+      'Preserve the exact identity, face, clothing, body proportions,',
+      'objects, location, lighting and composition from the source image.',
+      'Animate only the people and objects already visible in the image.',
+      'Use subtle, realistic human motion: natural blinking, breathing,',
+      'small head turns, gentle hand gestures and believable body movement.',
+      'Keep motion smooth and physically plausible.',
+      'Keep the camera mostly steady with only subtle cinematic movement.',
+      'Do not change the scene, add people, replace objects, or alter clothing.',
+      'No face morphing, no extra limbs, no flicker, no sudden transitions.',
+      'No text, subtitles, logos or watermarks.',
+      '',
+      'SCENE DESCRIPTION:',
+      scene.text,
+      '',
+      'Target: a coherent 5-second photorealistic video.'
+    ].join('\\n');
+  }
+
+  // -------------------------------------------------------
   // 4. DISPLAY SCENE CARDS
   // -------------------------------------------------------
 
@@ -423,6 +448,20 @@
           accept="image/*"
           aria-label="صورة المشهد ${index + 1}"
         >
+
+        <div class="motion-prep" style="margin-top:12px">
+          <button type="button" class="prepare-motion-btn">
+            تحضير وصف تحريك المشهد
+          </button>
+          <div class="motion-prompt-area" hidden style="margin-top:10px">
+            <textarea class="motion-prompt-text" rows="7" readonly
+              style="width:100%;box-sizing:border-box"></textarea>
+            <button type="button" class="copy-motion-btn">
+              نسخ وصف الحركة
+            </button>
+            <small class="motion-copy-status" aria-live="polite"></small>
+          </div>
+        </div>
       `;
 
       const preview = card.querySelector('img');
@@ -436,6 +475,30 @@
         preview.hidden = false;
         imageStatus.textContent = 'الصورة جاهزة';
       }
+
+      const motionArea = card.querySelector('.motion-prompt-area');
+      const motionText = card.querySelector('.motion-prompt-text');
+      const prepareMotion = card.querySelector('.prepare-motion-btn');
+      const copyMotion = card.querySelector('.copy-motion-btn');
+      const copyStatus = card.querySelector('.motion-copy-status');
+
+      prepareMotion.addEventListener('click', () => {
+        motionText.value = makeMotionPrompt(scene, index);
+        motionArea.hidden = false;
+        copyStatus.textContent = 'الوصف جاهز. استعمله مع أداة Image-to-Video.';
+        say(`تم تحضير وصف الحركة للمشهد ${index + 1}.`);
+      });
+
+      copyMotion.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(motionText.value);
+          copyStatus.textContent = 'تم نسخ وصف الحركة.';
+        } catch {
+          motionText.focus();
+          motionText.select();
+          copyStatus.textContent = 'حدّد النص وانسخه يدوياً باستعمال Ctrl+C.';
+        }
+      });
 
       input.addEventListener('change', () => {
         const file = input.files?.[0];
