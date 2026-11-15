@@ -67,6 +67,140 @@
             </div>
         </header>
 
+        <!-- MAIN VIDEO EDITOR -->
+        <section class="section workspace" id="editor">
+            <div class="section-heading">
+                <div>
+                    <h2>مساحة العمل</h2>
+                    <p>حضّر الفيديو ديالك داخل الاستوديو.</p>
+                </div>
+            </div>
+
+            <div class="workspace-box">
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">⬆</div>
+                    <h3>أضف ملفاتك إلى المشروع</h3>
+                    <p>اختار الفيديوهات أو الصور من جهازك.</p>
+                    <label for="mediaInput" class="upload-btn">اختيار الملفات</label>
+                    <input type="file" id="mediaInput" accept="video/*,image/*" multiple hidden>
+                    <div id="fileList" class="file-list"></div>
+                </div>
+
+                <div class="preview-area">
+                    <div class="preview-screen" id="previewScreen">
+                        <span class="play-icon">▶</span>
+                        <p>معاينة الفيديو</p>
+                    </div>
+                    <div class="preview-controls">
+                        <button id="playBtn">▶ تشغيل</button>
+                        <span id="mediaInfo">لا يوجد ملف محدد</span>
+                    </div>
+                </div>
+
+                <aside class="editor-inspector" aria-label="خصائص المشروع">
+                    <div class="inspector-head">
+                        <span class="inspector-kicker">INSPECTOR</span>
+                        <h3>خصائص المشروع</h3>
+                        <p>معلومات المقطع والإعدادات السريعة.</p>
+                    </div>
+                    <div class="inspector-block">
+                        <span class="inspector-label">المقطع المحدد</span>
+                        <strong id="inspectorFileName">مازال ما اخترتي حتى ملف</strong>
+                        <small id="inspectorFileType">أضف فيديو أو صورة للمشروع</small>
+                    </div>
+                    <div class="inspector-stats">
+                        <div><span>المقاطع</span><strong id="inspectorClipCount">0</strong></div>
+                        <div><span>المدة</span><strong id="inspectorTotalDuration">00:00</strong></div>
+                    </div>
+                    <div class="inspector-block">
+                        <span class="inspector-label">أدوات سريعة</span>
+                        <a href="#trim-editor">✂ قص الفيديو</a>
+                        <a href="#mergeStudio">▣ دمج المقاطع</a>
+                        <a href="#audio">♫ إعداد الصوت</a>
+                        <a href="#smart-montage">⇧ إعدادات التصدير</a>
+                    </div>
+                    <div class="inspector-tip"><span>✦</span><p>اختار مقطعاً من Timeline باش تشوف المعاينة ديالو وتبدل الترتيب.</p></div>
+                </aside>
+
+                <div class="timeline-editor">
+                    <div class="timeline-header">
+                        <h3>✂ Video Timeline</h3>
+                        <span id="clipCounter">0 مقطع</span>
+                    </div>
+
+                    <div class="timeline-toolbar">
+                        <button id="addMoreClips">＋ إضافة مقاطع</button>
+                        <button id="clearTimeline">حذف الكل</button>
+                    </div>
+
+                    <div id="timelineTracks" class="timeline-tracks">
+                        <p class="timeline-empty">أضف فيديوهات لبدء المونتاج.</p>
+                    </div>
+
+                    <div class="timeline-footer">
+                        <span>المدة الإجمالية:</span>
+                        <strong id="totalDuration">00:00</strong>
+                    </div>
+                </div>
+
+                <!-- SMART AUTO MONTAGE PRO -->
+                <div class="auto-montage-box" id="smart-montage">
+                    <div class="auto-montage-info">
+                        <span class="auto-montage-icon">✦</span>
+                        <div>
+                            <h3>SMART AUTO MONTAGE PRO</h3>
+                            <p>ركّب المقاطع ديالك تلقائياً في فيديو واحد.</p>
+                        </div>
+                    </div>
+
+                    <div class="export-settings">
+                        <h3>🎬 إعدادات التصدير</h3>
+
+                        <label for="exportQuality">جودة الفيديو</label>
+                        <select id="exportQuality">
+                            <option value="720">HD - 720p</option>
+                            <option value="1080" selected>Full HD - 1080p</option>
+                        </select>
+
+                        <label for="exportFPS">معدل الإطارات</label>
+                        <select id="exportFPS">
+                            <option value="30" selected>30 FPS</option>
+                            <option value="60">60 FPS</option>
+                        </select>
+
+                        <label for="autoMontageOriginalVolume">
+                            صوت الفيديو الأصلي
+                            <span id="autoMontageOriginalVolumeValue">100%</span>
+                        </label>
+                        <input type="range" id="autoMontageOriginalVolume" min="0" max="200" value="100" step="5">
+
+                        <label for="autoMontageMusicVolume">
+                            الموسيقى الخلفية
+                            <span id="autoMontageMusicVolumeValue">25%</span>
+                        </label>
+                        <input type="range" id="autoMontageMusicVolume" min="0" max="100" value="25" step="1">
+                    </div>
+
+                    <button id="smartAutoMontage" type="button">
+                        ✨ ابدأ المونتاج التلقائي
+                    </button>
+
+                    <div class="auto-montage-progress">
+                        <div id="autoMontageProgress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
+                    </div>
+
+                    <p id="autoMontageStatus" aria-live="polite">
+                        أضف الفيديوهات إلى Timeline ثم ابدأ المونتاج.
+                    </p>
+
+                    <a id="autoMontageDownload" hidden download="SMAILLY_AI_AUTO_MONTAGE.mp4">
+                        ⬇ تحميل الفيديو النهائي
+                    </a>
+                </div>
+            </div>
+        </section>
+
+
         <!-- PROFESSIONAL DASHBOARD OVERVIEW -->
         <section class="dashboard-overview" aria-label="نظرة عامة على الاستوديو">
             <div class="dashboard-heading">
@@ -259,113 +393,7 @@
             </div>
         </section>
 
-        <!-- MAIN VIDEO EDITOR -->
-        <section class="section workspace" id="editor">
-            <div class="section-heading">
-                <div>
-                    <h2>مساحة العمل</h2>
-                    <p>حضّر الفيديو ديالك داخل الاستوديو.</p>
-                </div>
-            </div>
 
-            <div class="workspace-box">
-                <div class="upload-area" id="uploadArea">
-                    <div class="upload-icon">⬆</div>
-                    <h3>أضف ملفاتك إلى المشروع</h3>
-                    <p>اختار الفيديوهات أو الصور من جهازك.</p>
-                    <label for="mediaInput" class="upload-btn">اختيار الملفات</label>
-                    <input type="file" id="mediaInput" accept="video/*,image/*" multiple hidden>
-                    <div id="fileList" class="file-list"></div>
-                </div>
-
-                <div class="preview-area">
-                    <div class="preview-screen" id="previewScreen">
-                        <span class="play-icon">▶</span>
-                        <p>معاينة الفيديو</p>
-                    </div>
-                    <div class="preview-controls">
-                        <button id="playBtn">▶ تشغيل</button>
-                        <span id="mediaInfo">لا يوجد ملف محدد</span>
-                    </div>
-                </div>
-
-                <div class="timeline-editor">
-                    <div class="timeline-header">
-                        <h3>✂ Video Timeline</h3>
-                        <span id="clipCounter">0 مقطع</span>
-                    </div>
-
-                    <div class="timeline-toolbar">
-                        <button id="addMoreClips">＋ إضافة مقاطع</button>
-                        <button id="clearTimeline">حذف الكل</button>
-                    </div>
-
-                    <div id="timelineTracks" class="timeline-tracks">
-                        <p class="timeline-empty">أضف فيديوهات لبدء المونتاج.</p>
-                    </div>
-
-                    <div class="timeline-footer">
-                        <span>المدة الإجمالية:</span>
-                        <strong id="totalDuration">00:00</strong>
-                    </div>
-                </div>
-
-                <!-- SMART AUTO MONTAGE PRO -->
-                <div class="auto-montage-box" id="smart-montage">
-                    <div class="auto-montage-info">
-                        <span class="auto-montage-icon">✦</span>
-                        <div>
-                            <h3>SMART AUTO MONTAGE PRO</h3>
-                            <p>ركّب المقاطع ديالك تلقائياً في فيديو واحد.</p>
-                        </div>
-                    </div>
-
-                    <div class="export-settings">
-                        <h3>🎬 إعدادات التصدير</h3>
-
-                        <label for="exportQuality">جودة الفيديو</label>
-                        <select id="exportQuality">
-                            <option value="720">HD - 720p</option>
-                            <option value="1080" selected>Full HD - 1080p</option>
-                        </select>
-
-                        <label for="exportFPS">معدل الإطارات</label>
-                        <select id="exportFPS">
-                            <option value="30" selected>30 FPS</option>
-                            <option value="60">60 FPS</option>
-                        </select>
-
-                        <label for="autoMontageOriginalVolume">
-                            صوت الفيديو الأصلي
-                            <span id="autoMontageOriginalVolumeValue">100%</span>
-                        </label>
-                        <input type="range" id="autoMontageOriginalVolume" min="0" max="200" value="100" step="5">
-
-                        <label for="autoMontageMusicVolume">
-                            الموسيقى الخلفية
-                            <span id="autoMontageMusicVolumeValue">25%</span>
-                        </label>
-                        <input type="range" id="autoMontageMusicVolume" min="0" max="100" value="25" step="1">
-                    </div>
-
-                    <button id="smartAutoMontage" type="button">
-                        ✨ ابدأ المونتاج التلقائي
-                    </button>
-
-                    <div class="auto-montage-progress">
-                        <div id="autoMontageProgress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
-                    </div>
-
-                    <p id="autoMontageStatus" aria-live="polite">
-                        أضف الفيديوهات إلى Timeline ثم ابدأ المونتاج.
-                    </p>
-
-                    <a id="autoMontageDownload" hidden download="SMAILLY_AI_AUTO_MONTAGE.mp4">
-                        ⬇ تحميل الفيديو النهائي
-                    </a>
-                </div>
-            </div>
-        </section>
 
         <!-- VIDEO TRIMMER -->
         <section class="section" id="trim-editor">
