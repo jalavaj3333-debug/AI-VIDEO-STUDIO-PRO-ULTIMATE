@@ -631,7 +631,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // CONNECT MENU LINKS TO SECTIONS
     // =====================================
 
-    document.querySelectorAll(".menu-item[href^='#']").forEach(link => {
+    document.querySelectorAll("a[href^='#']").forEach(link => {
         link.addEventListener("click", event => {
             const sectionId = link.getAttribute("href").substring(1);
 
