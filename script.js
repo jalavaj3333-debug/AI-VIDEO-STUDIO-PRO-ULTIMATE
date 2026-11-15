@@ -10,6 +10,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const mediaInfo = document.getElementById("mediaInfo");
     const playBtn = document.getElementById("playBtn");
 
+    const inspectorFileName = document.getElementById("inspectorFileName");
+    const inspectorFileType = document.getElementById("inspectorFileType");
+    const inspectorClipCount = document.getElementById("inspectorClipCount");
+    const inspectorTotalDuration = document.getElementById("inspectorTotalDuration");
+
+    function updateInspector(fileName, fileType) {
+        if (inspectorFileName && fileName) inspectorFileName.textContent = fileName;
+        if (inspectorFileType && fileType) inspectorFileType.textContent = fileType;
+    }
+
     const timelineTracks = document.getElementById("timelineTracks");
     const clipCounter = document.getElementById("clipCounter");
     const totalDuration = document.getElementById("totalDuration");
@@ -171,6 +181,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         mediaInfo.textContent = file.name;
         playBtn.textContent = "▧ صورة";
+        updateInspector(file.name, "صورة");
 
     }
 
@@ -224,6 +235,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         mediaInfo.textContent = clip.file.name;
         playBtn.textContent = "▶ تشغيل";
+        updateInspector(clip.file.name, "فيديو · " + formatTime(clip.duration));
 
         previewVideo.addEventListener("ended", playNextClip);
 
@@ -365,6 +377,9 @@ document.addEventListener("DOMContentLoaded", () => {
         if (clipCounter) {
             clipCounter.textContent = clips.length + " مقطع";
         }
+
+        if (inspectorClipCount) inspectorClipCount.textContent = String(clips.length);
+        if (inspectorTotalDuration) inspectorTotalDuration.textContent = formatTime(total);
 
         const total = clips.reduce(
             (sum, clip) => sum + clip.duration, 0
