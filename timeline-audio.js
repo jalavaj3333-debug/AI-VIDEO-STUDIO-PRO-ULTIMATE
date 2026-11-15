@@ -133,6 +133,19 @@
       });
       const volumeValue = document.createElement('small');
       volumeValue.textContent = Math.round(track.volume * 100) + '%';
+      const offset = document.createElement('input');
+      offset.type = 'number'; offset.min = '0'; offset.max = '86400';
+      offset.step = '0.1'; offset.value = String(track.startTime);
+      offset.title = 'بداية المسار بالثواني من بداية الفيديو';
+      offset.setAttribute('aria-label', 'بداية المسار بالثواني');
+      offset.className = 'audio-track-offset';
+      offset.addEventListener('change', () => {
+        const value = Number(offset.value);
+        track.startTime = Number.isFinite(value) ? Math.max(0, Math.min(86400, value)) : 0;
+        offset.value = String(track.startTime);
+      });
+      const offsetLabel = document.createElement('small');
+      offsetLabel.textContent = 'بداية s';
       const mute = document.createElement('button');
       mute.type = 'button'; mute.textContent = track.muted ? '🔇' : '🔊';
       mute.title = 'كتم الصوت';
@@ -144,7 +157,7 @@
       const remove = document.createElement('button');
       remove.type = 'button'; remove.textContent = '×'; remove.title = 'حذف المسار';
       remove.addEventListener('click', () => removeTrack(track));
-      controls.append(play, volume, volumeValue, mute, remove);
+      controls.append(play, volume, volumeValue, offsetLabel, offset, mute, remove);
       row.append(meta, waveWrap, controls);
       container.appendChild(row);
     });
@@ -159,7 +172,7 @@
       const track = {
         id: (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random())),
         file, url: URL.createObjectURL(file), duration: 0,
-        volume: 1, muted: false, wave: null, audio: new Audio()
+        volume: 1, muted: false, startTime: 0, wave: null, audio: new Audio()
       };
       track.audio.src = track.url;
       track.audio.preload = 'metadata';
@@ -187,7 +200,8 @@
   });
   window.getStudioAudioTracks = () => tracks.map(track => ({
     id: track.id, file: track.file, url: track.url,
-    duration: track.duration, volume: track.volume, muted: track.muted
+    duration: track.duration, volume: track.volume, muted: track.muted,
+    startTime: track.startTime
   }));
   window.addEventListener('beforeunload', () => {
     stopActive();
