@@ -583,28 +583,31 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     function openStudioSection(sectionId) {
-        const section = document.getElementById(sectionId);
+        // Nested tools such as Smart Montage stay inside the main editor view.
+        const requested = document.getElementById(sectionId);
+        const section = requested?.closest("main .section") || requested;
 
-        if (!section) {
-            console.error("Section not found:", sectionId);
-            alert("القسم غير موجود: " + sectionId);
+        if (!section || !section.matches("main .section")) {
+            console.error("Studio panel not found:", sectionId);
             return;
         }
 
-        section.scrollIntoView({
-            behavior: "smooth",
-            block: "start"
+        document.querySelectorAll("main.main-content>section.section").forEach(panel => {
+            const active = panel === section;
+            panel.classList.toggle("studio-panel-active", active);
+            panel.setAttribute("aria-hidden", String(!active));
         });
 
         document.querySelectorAll(".menu-item").forEach(item => {
-            item.classList.remove("active");
-
-            if (item.getAttribute("href") === "#" + sectionId) {
-                item.classList.add("active");
-            }
+            const href = item.getAttribute("href");
+            const targetId = href?.startsWith("#") ? href.slice(1) : "";
+            const target = document.getElementById(targetId);
+            const targetPanel = target?.closest("main .section") || target;
+            item.classList.toggle("active", targetPanel === section);
         });
 
         document.querySelector(".sidebar")?.classList.remove("open");
+        window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
     document.querySelectorAll(".tool-btn[data-tool]").forEach(button => {
