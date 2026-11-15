@@ -379,11 +379,12 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         if (inspectorClipCount) inspectorClipCount.textContent = String(clips.length);
-        if (inspectorTotalDuration) inspectorTotalDuration.textContent = formatTime(total);
 
         const total = clips.reduce(
             (sum, clip) => sum + clip.duration, 0
         );
+
+        if (inspectorTotalDuration) inspectorTotalDuration.textContent = formatTime(total);
 
         if (totalDuration) {
             totalDuration.textContent = formatTime(total);
