@@ -266,3 +266,21 @@ body{background-image:radial-gradient(ellipse at 48% -18%,rgba(112,91,219,.19),t
 @media(prefers-reduced-motion:reduce){
  *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
 }
+
+
+/* ===== ONE-PAGE STUDIO SHELL: keep every tool inside one workspace ===== */
+.main-content>.dashboard-overview,
+.main-content>.hero{display:none!important}
+.main-content>section.section{display:none}
+.main-content>section.section.studio-panel-active{display:block;animation:studioPanelIn .22s ease both}
+.main-content>.topbar{margin-bottom:16px}
+.sidebar .menu{overflow-y:auto;max-height:calc(100vh - 245px);padding-left:3px;scrollbar-width:thin}
+.sidebar .menu-item{font-size:12px;padding:10px 12px;min-height:40px}
+.sidebar .menu-item.active{background:linear-gradient(90deg,rgba(155,140,255,.16),rgba(85,214,232,.07));border-right:3px solid var(--ui-cyan);color:#f3f2ff}
+.main-content>section.section:not(#editor).studio-panel-active{min-height:calc(100vh - 120px);padding:22px;border:1px solid var(--ui-line);border-radius:16px;background:linear-gradient(145deg,rgba(16,24,38,.97),rgba(9,14,24,.98));box-shadow:var(--ui-panel-shadow)}
+.main-content>section.section:not(#editor).studio-panel-active>.section-heading{margin-bottom:20px}
+@keyframes studioPanelIn{from{opacity:.35;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:768px){
+ .sidebar .menu{max-height:calc(100vh - 210px)}
+ .main-content>section.section:not(#editor).studio-panel-active{padding:14px;min-height:calc(100vh - 95px)}
+}
