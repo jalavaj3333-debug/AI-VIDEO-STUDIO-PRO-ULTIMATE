@@ -188,6 +188,8 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             const clips = window.getStudioClips?.() || [];
             const musicFile = musicInput?.files?.[0] || null;
+            const timelineAudioTracks = (window.getStudioAudioTracks?.() || [])
+                .filter(track => track.file && !track.muted && Number(track.volume) > 0);
 
             validateClips(clips);
 
@@ -313,6 +315,19 @@ document.addEventListener("DOMContentLoaded", () => {
                 temporaryFiles.push(musicName);
             }
 
+            const timelineAudioNames = [];
+            for (let i = 0; i < timelineAudioTracks.length; i++) {
+                const track = timelineAudioTracks[i];
+                if (!track.file.type?.startsWith("audio/")) {
+                    throw new Error(`المسار الصوتي ${i + 1} غير صالح.`);
+                }
+                const name = `timeline_audio_${String(i + 1).padStart(3, "0")}.${getExtension(track.file)}`;
+                updateStatus(`تحميل المسار الصوتي ${i + 1}/${timelineAudioTracks.length}...`);
+                await ffmpeg.writeFile(name, await fetchFile(track.file));
+                timelineAudioNames.push(name);
+                temporaryFiles.push(name);
+            }
+
             const filters = [];
 
             for (let i = 0; i < clips.length; i++) {
@@ -386,13 +401,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             }
 
+            const finalAudioLabels = ["[originalMix]"];
+
             if (musicFile) {
                 const musicIndex = clips.length;
                 const fadeDuration = Math.min(2, finalDuration);
-                const fadeStart = Math.max(
-                    0,
-                    finalDuration - fadeDuration
-                );
+                const fadeStart = Math.max(0, finalDuration - fadeDuration);
 
                 filters.push(
                     `[${musicIndex}:a:0]` +
@@ -404,15 +418,37 @@ document.addEventListener("DOMContentLoaded", () => {
                     `afade=t=out:st=${fadeStart}:d=${fadeDuration}` +
                     `[musicTrack]`
                 );
+                finalAudioLabels.push("[musicTrack]");
+            }
+
+            for (let i = 0; i < timelineAudioTracks.length; i++) {
+                const track = timelineAudioTracks[i];
+                const inputIndex = clips.length + (musicFile ? 1 : 0) + i;
+                const start = Math.max(0, Math.min(finalDuration, Number(track.startTime) || 0));
+                if (start >= finalDuration) continue;
+
+                const remaining = cleanNumber(finalDuration - start);
+                const delayMs = Math.round(start * 1000);
+                const volume = Math.max(0, Math.min(2, Number(track.volume) || 0));
+                const label = `timelineAudio${i}`;
 
                 filters.push(
-                    `[originalMix][musicTrack]` +
-                    `amix=inputs=2:duration=first:dropout_transition=2,` +
-                    `alimiter=limit=0.95[outa]`
+                    `[${inputIndex}:a:0]` +
+                    `atrim=duration=${remaining},asetpts=PTS-STARTPTS,` +
+                    `aresample=48000,aformat=sample_rates=48000:channel_layouts=stereo,` +
+                    `volume=${volume},adelay=${delayMs}|${delayMs},` +
+                    `apad,atrim=duration=${finalDuration}[${label}]`
                 );
+                finalAudioLabels.push(`[${label}]`);
+            }
+
+            if (finalAudioLabels.length === 1) {
+                filters.push("[originalMix]alimiter=limit=0.95[outa]");
             } else {
                 filters.push(
-                    "[originalMix]alimiter=limit=0.95[outa]"
+                    `${finalAudioLabels.join("")}` +
+                    `amix=inputs=${finalAudioLabels.length}:duration=first:dropout_transition=2,` +
+                    `alimiter=limit=0.95[outa]`
                 );
             }
 
@@ -428,6 +464,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     "-i", musicName
                 );
             }
+
+            timelineAudioNames.forEach(name => inputArguments.push("-i", name));
 
             const crf = quality === 1080 ? "23" : "26";
 
