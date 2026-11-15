@@ -68,6 +68,17 @@ document.addEventListener("DOMContentLoaded", () => {
         return Number(Number(value).toFixed(3));
     }
 
+    // Prevent the same selected music file from being mixed twice when it is
+    // also present in the main timeline audio lanes.
+    function isSameLocalFile(first, second) {
+        if (!first || !second) return false;
+        return first === second ||
+            (first.name === second.name &&
+             first.size === second.size &&
+             first.lastModified === second.lastModified &&
+             first.type === second.type);
+    }
+
     function getExportSettings() {
         const quality = Number(qualitySelect?.value || 1080);
         const fps = Number(fpsSelect?.value || 30);
@@ -188,8 +199,16 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             const clips = window.getStudioClips?.() || [];
             const musicFile = musicInput?.files?.[0] || null;
-            const timelineAudioTracks = (window.getStudioAudioTracks?.() || [])
-                .filter(track => track.file && !track.muted && Number(track.volume) > 0);
+            const allTimelineAudioTracks = window.getStudioAudioTracks?.() || [];
+            const timelineAudioTracks = allTimelineAudioTracks.filter(track =>
+                track.file &&
+                !track.muted &&
+                Number(track.volume) > 0 &&
+                !isSameLocalFile(track.file, musicFile)
+            );
+            const duplicateMusicCount = allTimelineAudioTracks.filter(track =>
+                track.file && isSameLocalFile(track.file, musicFile)
+            ).length;
 
             validateClips(clips);
 
@@ -230,7 +249,11 @@ document.addEventListener("DOMContentLoaded", () => {
             startButton.textContent = "⏳ جاري المونتاج...";
 
             updateProgress(0);
-            updateStatus(`جاري تجهيز الفيديو ${quality}p / ${fps} FPS...`);
+            updateStatus(
+                duplicateMusicCount
+                    ? `جاري تجهيز الفيديو... تم تجنب تكرار ملف الموسيقى الموجود في المسارات (${duplicateMusicCount}).`
+                    : `جاري تجهيز الفيديو ${quality}p / ${fps} FPS...`
+            );
 
             if (downloadLink) {
                 downloadLink.hidden = true;
