@@ -648,6 +648,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // INITIALIZE
     // =====================================
 
+    openStudioSection("editor");
     renderTimeline();
 
     console.log("AI VIDEO STUDIO PRO EDITOR READY!");
