@@ -560,3 +560,10 @@ body{background-image:radial-gradient(ellipse at 48% -18%,rgba(112,91,219,.19),t
  #editor .audio-track-controls{flex-wrap:wrap}
  #editor .audio-track-controls input[type=range]{width:100px}
 }
+
+#editor .audio-track-controls .audio-track-offset{
+ width:58px;min-width:52px;height:27px;padding:3px 5px;
+ border:1px solid rgba(155,140,255,.24);border-radius:6px;
+ background:#0d1727;color:#dbe4f3;font-size:10px;font-variant-numeric:tabular-nums;
+}
+#editor .audio-track-controls .audio-track-offset:focus{outline:1px solid #9b8cff;border-color:#9b8cff}
