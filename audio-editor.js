@@ -83,6 +83,8 @@
 
     function micSay(message) {
         if (micStatus) micStatus.textContent = message;
+        const workspaceStatus = $('workspaceVoiceoverStatus');
+        if (workspaceStatus) workspaceStatus.textContent = message;
     }
 
     function setProgress(value) {
@@ -399,6 +401,9 @@
 
         micStream?.getTracks().forEach(track => track.stop());
         micStream = null;
+        window.dispatchEvent(new CustomEvent('aivsp:voiceover-recording', {
+            detail: { recording: false }
+        }));
 
         if (micStart) micStart.disabled = false;
         if (micStop) micStop.disabled = true;
@@ -489,12 +494,18 @@
                 if (voiceInput) voiceInput.value = '';
                 if (micDelete) micDelete.disabled = false;
 
-                micSay('التسجيل واجد. تقدر تسمعو أو تدمجو مع الفيديو.');
+                micSay('✓ التسجيل واجد وغادي يتضاف لمسار الصوت فمساحة العمل.');
+                window.dispatchEvent(new CustomEvent('aivsp:voiceover-ready', {
+                    detail: { file: selectedVoice }
+                }));
                 finishRecordingUI();
                 hideOutput();
             };
 
             recorder.start(250);
+            window.dispatchEvent(new CustomEvent('aivsp:voiceover-recording', {
+                detail: { recording: true }
+            }));
 
             if (micStart) micStart.disabled = true;
             if (micStop) micStop.disabled = false;
@@ -956,6 +967,12 @@
         getMusic: () => selectedMusic,
         getVoice: () => selectedVoice,
         getVideo: () => selectedVideo
+    };
+
+    // Shared microphone controls for the main workspace timeline.
+    window.AIVideoVoiceover = {
+        start: startRecording,
+        stop: stopRecording
     };
 
     // Cleanup.
