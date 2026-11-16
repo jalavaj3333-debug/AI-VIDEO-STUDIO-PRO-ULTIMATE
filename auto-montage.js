@@ -452,7 +452,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 const remaining = cleanNumber(finalDuration - start);
                 const delayMs = Math.round(start * 1000);
-                const volume = Math.max(0, Math.min(2, Number(track.volume) || 0));
+                const volume = track.muted ? 0 : Math.max(0, Math.min(2, Number(track.volume) || 0));
                 const label = `timelineAudio${i}`;
 
                 filters.push(
