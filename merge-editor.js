@@ -119,7 +119,9 @@ if (
 
             setMergeStatus("جاري دمج الفيديوهات...");
 
-            const result = await engine.exec([
+            // First try a fast stream-copy merge. This works when the
+            // selected files have compatible streams and codecs.
+            let result = await engine.exec([
                 "-y",
                 "-f", "concat",
                 "-safe", "0",
@@ -129,12 +131,44 @@ if (
             ]);
 
             if (result !== 0) {
-                throw new Error(
-                    "الفيديوهات غير متوافقة للدمج المباشر. جرّب فيديوهات بنفس الترميز والمقاس."
+                // Remove any partial output before trying a normalized export.
+                try {
+                    await engine.deleteFile(outputName);
+                } catch (_) {
+                    // No partial output exists.
+                }
+
+                setMergeStatus(
+                    "الصيغ مختلفة؛ كنعاود الدمج بتحويل الفيديو لصيغة MP4 موحدة..."
                 );
+                setMergeProgress(45);
+
+                result = await engine.exec([
+                    "-y",
+                    "-fflags", "+genpts",
+                    "-f", "concat",
+                    "-safe", "0",
+                    "-i", listName,
+                    "-map", "0:v:0?",
+                    "-map", "0:a:0?",
+                    "-c:v", "libx264",
+                    "-preset", "ultrafast",
+                    "-crf", "23",
+                    "-pix_fmt", "yuv420p",
+                    "-c:a", "aac",
+                    "-b:a", "128k",
+                    "-movflags", "+faststart",
+                    outputName
+                ]);
+
+                if (result !== 0) {
+                    throw new Error(
+                        "تعذر دمج هاد المجموعة حتى بعد تحويلها. جرّب فيديوهات MP4 عادية وبعدد أقل، وتأكد أن كل ملف كيتحل بوحدو."
+                    );
+                }
             }
 
-            setMergeStatus("جاري تجهيز الفيديو النهائي...");
+            setMergeStatus("جاري التحقق من الفيديو النهائي...");
             setMergeProgress(85);
 
             const data = await engine.readFile(outputName);
