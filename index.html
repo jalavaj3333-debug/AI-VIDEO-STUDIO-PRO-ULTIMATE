@@ -159,9 +159,14 @@
                             <strong>♫ AUDIO TRACKS</strong>
                             <small>الموسيقى والتعليق والمؤثرات الصوتية</small>
                         </div>
-                        <label class="audio-track-add" for="timelineAudioInput">＋ إضافة صوت</label>
-                        <input id="timelineAudioInput" type="file" accept="audio/*" multiple hidden>
+                        <div class="audio-track-actions">
+                            <button id="workspaceVoiceoverStart" class="audio-track-add voiceover-start" type="button">🎙 تسجيل التعليق</button>
+                            <button id="workspaceVoiceoverStop" class="audio-track-add voiceover-stop" type="button" disabled>■ إيقاف التسجيل</button>
+                            <label class="audio-track-add" for="timelineAudioInput">＋ إضافة صوت</label>
+                            <input id="timelineAudioInput" type="file" accept="audio/*" multiple hidden>
+                        </div>
                     </div>
+                    <p id="workspaceVoiceoverStatus" class="workspace-voiceover-status" aria-live="polite">سجّل تعليقك الصوتي وسيُضاف تلقائياً إلى Timeline.</p>
                     <div id="audioTimelineTracks" class="audio-timeline-tracks">
                         <p class="audio-timeline-empty">زيد ملف صوتي باش يظهر المسار والموجة الصوتية ديالو هنا.</p>
                     </div>
