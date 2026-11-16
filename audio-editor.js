@@ -187,6 +187,49 @@
     handleFileInput(musicInput, 'audio');
     handleFileInput(voiceInput, 'audio');
 
+    // Send the selected Audio Studio sources and their current mix settings
+    // into the main timeline so the main export uses the same audio tracks.
+    const sendToTimeline = $('sendAudioStudioToTimeline');
+    const timelineBridgeStatus = $('audioStudioTimelineStatus');
+    sendToTimeline?.addEventListener('click', async () => {
+        const entries = [];
+        if (selectedMusic) entries.push({
+            file: selectedMusic,
+            settings: {
+                volume: clampVolume(musicVolume, 0.25),
+                fadeIn: getSeconds(musicFadeIn, 2),
+                fadeOut: getSeconds(musicFadeOut, 3)
+            }
+        });
+        if (selectedVoice) entries.push({
+            file: selectedVoice,
+            settings: {
+                volume: clampVolume(voiceVolume, 1),
+                fadeIn: getSeconds(voiceFadeIn, 0.5),
+                fadeOut: getSeconds(voiceFadeOut, 1)
+            }
+        });
+        if (!entries.length) {
+            if (timelineBridgeStatus) timelineBridgeStatus.textContent = 'اختار الموسيقى أو التعليق الصوتي أولاً.';
+            return;
+        }
+        if (!window.AIVideoTimelineAudio?.importFromAudioStudio) {
+            if (timelineBridgeStatus) timelineBridgeStatus.textContent = 'مسارات Timeline مازال ما تحمّلوش. حدّث الصفحة وحاول مرة أخرى.';
+            return;
+        }
+        sendToTimeline.disabled = true;
+        try {
+            await window.AIVideoTimelineAudio.importFromAudioStudio(entries);
+            if (timelineBridgeStatus) timelineBridgeStatus.textContent = '✓ تمت إضافة الملفات وإعدادات الصوت وFade إلى Timeline. التصدير الرئيسي غادي يستعمل هاد المسارات.';
+            say('تم إرسال الموسيقى والتعليق وإعداداتهما إلى Timeline.');
+        } catch (error) {
+            console.error('Audio Studio → Timeline:', error);
+            if (timelineBridgeStatus) timelineBridgeStatus.textContent = 'تعذرت الإضافة: ' + error.message;
+        } finally {
+            sendToTimeline.disabled = false;
+        }
+    });
+
     // Receive generated videos from other studio tools.
     window.addEventListener('aivsp:video-ready', event => {
         const blob = event.detail?.blob;
