@@ -453,14 +453,22 @@ document.addEventListener("DOMContentLoaded", () => {
                 const remaining = cleanNumber(finalDuration - start);
                 const delayMs = Math.round(start * 1000);
                 const volume = track.muted ? 0 : Math.max(0, Math.min(2, Number(track.volume) || 0));
+                const sourceDuration = Math.max(0, Number(track.duration) || remaining);
+                const audibleDuration = cleanNumber(Math.min(remaining, sourceDuration));
+                const fadeIn = Math.max(0, Math.min(audibleDuration, Number(track.fadeIn) || 0));
+                const fadeOut = Math.max(0, Math.min(audibleDuration, Number(track.fadeOut) || 0));
+                const fadeOutStart = cleanNumber(Math.max(0, audibleDuration - fadeOut));
+                const fadeFilters = [];
+                if (fadeIn > 0) fadeFilters.push(`afade=t=in:st=0:d=${fadeIn}`);
+                if (fadeOut > 0) fadeFilters.push(`afade=t=out:st=${fadeOutStart}:d=${fadeOut}`);
                 const label = `timelineAudio${i}`;
 
                 filters.push(
                     `[${inputIndex}:a:0]` +
                     `atrim=duration=${remaining},asetpts=PTS-STARTPTS,` +
                     `aresample=48000,aformat=sample_rates=48000:channel_layouts=stereo,` +
-                    `volume=${volume},adelay=${delayMs}|${delayMs},` +
-                    `apad,atrim=duration=${finalDuration}[${label}]`
+                    `volume=${volume},${fadeFilters.length ? fadeFilters.join(",") + "," : ""}` +
+                    `adelay=${delayMs}|${delayMs},apad,atrim=duration=${finalDuration}[${label}]`
                 );
                 finalAudioLabels.push(`[${label}]`);
             }
