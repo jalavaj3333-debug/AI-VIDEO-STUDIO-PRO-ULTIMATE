@@ -146,6 +146,28 @@
       });
       const offsetLabel = document.createElement('small');
       offsetLabel.textContent = 'بداية s';
+      const fadeIn = document.createElement('input');
+      fadeIn.type = 'number'; fadeIn.min = '0'; fadeIn.max = '10';
+      fadeIn.step = '0.1'; fadeIn.value = String(track.fadeIn);
+      fadeIn.className = 'audio-track-fade';
+      fadeIn.title = 'Fade In — دخول تدريجي بالثواني';
+      fadeIn.setAttribute('aria-label', 'Fade In بالثواني');
+      fadeIn.addEventListener('change', () => {
+        const value = Number(fadeIn.value);
+        track.fadeIn = Number.isFinite(value) ? Math.max(0, Math.min(10, value)) : 0;
+        fadeIn.value = String(track.fadeIn);
+      });
+      const fadeOut = document.createElement('input');
+      fadeOut.type = 'number'; fadeOut.min = '0'; fadeOut.max = '10';
+      fadeOut.step = '0.1'; fadeOut.value = String(track.fadeOut);
+      fadeOut.className = 'audio-track-fade';
+      fadeOut.title = 'Fade Out — خروج تدريجي بالثواني';
+      fadeOut.setAttribute('aria-label', 'Fade Out بالثواني');
+      fadeOut.addEventListener('change', () => {
+        const value = Number(fadeOut.value);
+        track.fadeOut = Number.isFinite(value) ? Math.max(0, Math.min(10, value)) : 0;
+        fadeOut.value = String(track.fadeOut);
+      });
       const mute = document.createElement('button');
       mute.type = 'button'; mute.textContent = track.muted ? '🔇' : '🔊';
       mute.title = 'كتم الصوت';
@@ -157,7 +179,7 @@
       const remove = document.createElement('button');
       remove.type = 'button'; remove.textContent = '×'; remove.title = 'حذف المسار';
       remove.addEventListener('click', () => removeTrack(track));
-      controls.append(play, volume, volumeValue, offsetLabel, offset, mute, remove);
+      controls.append(play, volume, volumeValue, offsetLabel, offset, fadeIn, fadeOut, mute, remove);
       row.append(meta, waveWrap, controls);
       container.appendChild(row);
     });
@@ -172,7 +194,7 @@
       const track = {
         id: (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random())),
         file, url: URL.createObjectURL(file), duration: 0,
-        volume: 1, muted: false, startTime: 0, wave: null, audio: new Audio()
+        volume: 1, muted: false, startTime: 0, fadeIn: 0, fadeOut: 0, wave: null, audio: new Audio()
       };
       track.audio.src = track.url;
       track.audio.preload = 'metadata';
@@ -227,7 +249,7 @@
   window.getStudioAudioTracks = () => tracks.map(track => ({
     id: track.id, file: track.file, url: track.url,
     duration: track.duration, volume: track.volume, muted: track.muted,
-    startTime: track.startTime
+    startTime: track.startTime, fadeIn: track.fadeIn, fadeOut: track.fadeOut
   }));
   window.addEventListener('beforeunload', () => {
     stopActive();
