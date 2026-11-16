@@ -111,7 +111,7 @@
         try {
           const ctx = getContext();
           if (ctx.state === 'suspended') await ctx.resume();
-          track.audio.volume = track.muted ? 0 : track.volume;
+          track.audio.volume = track.muted ? 0 : Math.min(1, track.volume);
           track.audio.currentTime = 0;
           activeAudio = track.audio;
           await track.audio.play();
@@ -173,7 +173,7 @@
       mute.title = 'كتم الصوت';
       mute.addEventListener('click', () => {
         track.muted = !track.muted;
-        track.audio.volume = track.muted ? 0 : track.volume;
+        track.audio.volume = track.muted ? 0 : Math.min(1, track.volume);
         mute.textContent = track.muted ? '🔇' : '🔊';
       });
       const remove = document.createElement('button');
@@ -184,17 +184,33 @@
       container.appendChild(row);
     });
   };
-  const addFiles = async files => {
-    const valid = files.filter(file => file.type.startsWith('audio/'));
-    if (!valid.length) {
-      alert('اختار ملف صوتي صالح.');
-      return;
-    }
+  const addFiles = async (files, settings = {}) => {
+    const valid = files.filter(file => file && file.type.startsWith('audio/'));
+    if (!valid.length) return;
     for (const file of valid) {
+      const existing = tracks.find(track =>
+        track.file === file ||
+        (track.file.name === file.name && track.file.size === file.size &&
+         track.file.lastModified === file.lastModified && track.file.type === file.type)
+      );
+      if (existing) {
+        if (Number.isFinite(Number(settings.volume))) existing.volume = Math.max(0, Math.min(2, Number(settings.volume)));
+        if (Number.isFinite(Number(settings.fadeIn))) existing.fadeIn = Math.max(0, Math.min(10, Number(settings.fadeIn)));
+        if (Number.isFinite(Number(settings.fadeOut))) existing.fadeOut = Math.max(0, Math.min(10, Number(settings.fadeOut)));
+        if (Number.isFinite(Number(settings.startTime))) existing.startTime = Math.max(0, Math.min(86400, Number(settings.startTime)));
+        if (existing.audio) existing.audio.volume = existing.muted ? 0 : Math.min(1, existing.volume);
+        render();
+        continue;
+      }
       const track = {
         id: (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random())),
         file, url: URL.createObjectURL(file), duration: 0,
-        volume: 1, muted: false, startTime: 0, fadeIn: 0, fadeOut: 0, wave: null, audio: new Audio()
+        volume: Number.isFinite(Number(settings.volume)) ? Math.max(0, Math.min(2, Number(settings.volume))) : 1,
+        muted: false,
+        startTime: Number.isFinite(Number(settings.startTime)) ? Math.max(0, Math.min(86400, Number(settings.startTime))) : 0,
+        fadeIn: Number.isFinite(Number(settings.fadeIn)) ? Math.max(0, Math.min(10, Number(settings.fadeIn))) : 0,
+        fadeOut: Number.isFinite(Number(settings.fadeOut)) ? Math.max(0, Math.min(10, Number(settings.fadeOut))) : 0,
+        wave: null, audio: new Audio()
       };
       track.audio.src = track.url;
       track.audio.preload = 'metadata';
@@ -246,6 +262,14 @@
     if (voiceoverStatus) voiceoverStatus.textContent = '✓ تم حفظ التسجيل وإضافته إلى مسارات الصوت. حرّك بداية المسار واضبط مستواه من هنا.';
     await addFiles([file]);
   });
+  // Shared bridge used by Audio Studio Pro to add its selected files and settings.
+  window.AIVideoTimelineAudio = {
+    importFromAudioStudio: async entries => {
+      for (const entry of (Array.isArray(entries) ? entries : [])) {
+        if (entry?.file) await addFiles([entry.file], entry.settings || {});
+      }
+    }
+  };
   window.getStudioAudioTracks = () => tracks.map(track => ({
     id: track.id, file: track.file, url: track.url,
     duration: track.duration, volume: track.volume, muted: track.muted,
