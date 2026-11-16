@@ -198,6 +198,32 @@
     addFiles(Array.from(input.files || []));
     input.value = '';
   });
+  // Microphone voiceovers recorded in Audio Studio are inserted directly into this timeline.
+  const voiceoverStart = document.getElementById('workspaceVoiceoverStart');
+  const voiceoverStop = document.getElementById('workspaceVoiceoverStop');
+  const voiceoverStatus = document.getElementById('workspaceVoiceoverStatus');
+  voiceoverStart?.addEventListener('click', () => {
+    if (!window.AIVideoVoiceover?.start) {
+      if (voiceoverStatus) voiceoverStatus.textContent = 'تعذر تشغيل أداة التسجيل. حدّث الصفحة وحاول مرة أخرى.';
+      return;
+    }
+    window.AIVideoVoiceover.start();
+  });
+  voiceoverStop?.addEventListener('click', () => window.AIVideoVoiceover?.stop?.());
+  window.addEventListener('aivsp:voiceover-recording', event => {
+    const recording = Boolean(event.detail?.recording);
+    if (voiceoverStart) voiceoverStart.disabled = recording;
+    if (voiceoverStop) voiceoverStop.disabled = !recording;
+    if (voiceoverStatus && recording) voiceoverStatus.textContent = '🎙 جاري تسجيل التعليق الصوتي...';
+  });
+  window.addEventListener('aivsp:voiceover-ready', async event => {
+    const file = event.detail?.file;
+    if (!file) return;
+    if (voiceoverStart) voiceoverStart.disabled = false;
+    if (voiceoverStop) voiceoverStop.disabled = true;
+    if (voiceoverStatus) voiceoverStatus.textContent = '✓ تم حفظ التسجيل وإضافته إلى مسارات الصوت. حرّك بداية المسار واضبط مستواه من هنا.';
+    await addFiles([file]);
+  });
   window.getStudioAudioTracks = () => tracks.map(track => ({
     id: track.id, file: track.file, url: track.url,
     duration: track.duration, volume: track.volume, muted: track.muted,
