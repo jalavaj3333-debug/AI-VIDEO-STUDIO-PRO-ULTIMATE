@@ -1,132 +1,155 @@
-
 (() => {
-    "use strict";
+  "use strict";
 
-    const SERVER = "http://127.0.0.1:8000";
+  const API = "https://ai-video-studio-automation.jalavaj-3333.workers.dev";
 
-    const connectButton = document.getElementById(
-        "automationConnect"
-    );
+  const connectButton = document.getElementById("automationConnect");
+  const testButton = document.getElementById("automationTest");
+  const connectionStatus = document.getElementById("automationConnectionStatus");
+  const result = document.getElementById("automationResult");
+  const tasksList = document.getElementById("automationTasksList");
 
-    const testButton = document.getElementById(
-        "automationTest"
-    );
+  if (!connectButton || !testButton || !connectionStatus || !result) {
+    console.warn("Cloud Automation interface elements are missing.");
+    return;
+  }
 
-    const tokenInput = document.getElementById(
-        "automationToken"
-    );
+  let connected = false;
 
-    const connectionStatus = document.getElementById(
-        "automationConnectionStatus"
-    );
+  function status(message) {
+    connectionStatus.textContent = message;
+  }
 
-    const result = document.getElementById(
-        "automationResult"
-    );
+  function showTasks(tasks) {
+    if (!tasksList) return;
+    tasksList.replaceChildren();
 
-    if (!connectButton || !testButton || !tokenInput) {
-        console.warn("Automation interface not found.");
-        return;
+    if (!Array.isArray(tasks) || tasks.length === 0) {
+      const empty = document.createElement("p");
+      empty.textContent = "مازال ما تسجلات حتى مهمة.";
+      tasksList.appendChild(empty);
+      return;
     }
 
-    let connected = false;
+    for (const task of tasks) {
+      const item = document.createElement("div");
+      item.className = "automation-task-item";
 
-    function showStatus(message) {
-        connectionStatus.textContent = message;
+      const title = document.createElement("strong");
+      title.textContent = task.title || "مهمة بدون عنوان";
+
+      const meta = document.createElement("small");
+      meta.textContent = (task.task_type || "task") + " · " + (task.status || "unknown");
+
+      item.append(title, meta);
+      tasksList.appendChild(item);
+    }
+  }
+
+  async function api(path, options = {}) {
+    return fetch(API + path, {
+      ...options,
+      credentials: "include",
+      cache: "no-store",
+      headers: {
+        "Accept": "application/json",
+        ...(options.headers || {})
+      }
+    });
+  }
+
+  async function loadTasks() {
+    const response = await api("/api/tasks");
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      throw new Error(data.error || "تعذر تحميل المهام.");
     }
 
-    async function connectServer() {
-        connected = false;
-        testButton.disabled = true;
+    showTasks(data.tasks || []);
+  }
 
-        const token = tokenInput.value.trim();
+  async function connectCloud() {
+    connected = false;
+    testButton.disabled = true;
+    connectButton.disabled = true;
+    status("جاري التحقق من تسجيل الدخول والاتصال السحابي...");
+    result.textContent = "";
 
-        if (!token) {
-            showStatus("أدخل رمز الحماية أولاً.");
-            return;
-        }
+    try {
+      const [healthResponse, sessionResponse] = await Promise.all([
+        api("/health"),
+        api("/auth/me")
+      ]);
 
-        showStatus("جاري الاتصال بالسيرفر...");
+      const health = await healthResponse.json();
+      const session = await sessionResponse.json();
 
-        try {
-            const response = await fetch(SERVER + "/", {
-                method: "GET",
-                mode: "cors",
-                headers: {
-                    "X-Automation-Token": token
-                }
-            });
+      if (!healthResponse.ok || health.status !== "online") {
+        throw new Error("خدمة Cloudflare Worker غير متاحة.");
+      }
 
-            if (!response.ok) {
-                throw new Error("Server returned " + response.status);
-            }
+      if (!sessionResponse.ok || !session.authenticated ||
+          session.user !== "jalavaj3333-debug") {
+        throw new Error("خاصك تسجل الدخول بحساب GitHub المصرح به.");
+      }
 
-            const data = await response.json();
+      connected = true;
+      testButton.disabled = false;
+      status("● متصل بالسحابة — " + session.user);
+      result.textContent = "الاتصال ناجح. المهام كتتسجل في قاعدة البيانات السحابية.";
 
-            if (data.status !== "online") {
-                throw new Error("Unexpected server response");
-            }
+      await loadTasks();
+    } catch (error) {
+      status("غير متصل بالسحابة.");
+      result.textContent = error.message;
+    } finally {
+      connectButton.disabled = false;
+    }
+  }
 
-            connected = true;
-            testButton.disabled = false;
-
-            showStatus("● متصل بالسيرفر المحلي");
-            result.textContent = "الاتصال ناجح.";
-
-        } catch (error) {
-            connected = false;
-            testButton.disabled = true;
-
-            showStatus("تعذر الاتصال بالسيرفر.");
-            result.textContent =
-                error.message +
-                " — تأكد أن السيرفر شغال وأن المتصفح سمح بالاتصال المحلي.";
-        }
+  async function createTestTask() {
+    if (!connected) {
+      result.textContent = "اختبر الاتصال السحابي أولاً.";
+      return;
     }
 
-    async function runExample() {
-        if (!connected) {
-            result.textContent = "اتصل بالسيرفر أولاً.";
-            return;
-        }
+    testButton.disabled = true;
+    result.textContent = "جاري حفظ مهمة الاختبار...";
 
-        testButton.disabled = true;
-        result.textContent = "جاري تنفيذ المهمة...";
+    try {
+      const response = await api("/api/tasks", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          task_type: "connection_test",
+          title: "اختبار اتصال AI Video Studio",
+          payload: {
+            source: "Automation Studio",
+            created_from: "AI VIDEO STUDIO PRO ULTIMATE"
+          }
+        })
+      });
 
-        try {
-            const response = await fetch(
-                SERVER + "/open-example",
-                {
-                    method: "POST",
-                    mode: "cors",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-Automation-Token": tokenInput.value.trim()
-                    },
-                    body: JSON.stringify({})
-                }
-            );
+      const data = await response.json();
 
-            const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "تعذر حفظ المهمة.");
+      }
 
-            if (!response.ok || data.status !== "success") {
-                throw new Error(
-                    data.message || "Automation failed"
-                );
-            }
-
-            result.textContent =
-                "نجاح! عنوان الصفحة: " + data.title;
-
-        } catch (error) {
-            result.textContent =
-                "فشل تنفيذ المهمة: " + error.message;
-
-        } finally {
-            testButton.disabled = !connected;
-        }
+      result.textContent = "تم حفظ مهمة الاختبار في قاعدة البيانات السحابية. هذه العملية تسجل المهمة فقط ولا تنفذها تلقائياً.";
+      await loadTasks();
+    } catch (error) {
+      result.textContent = "فشل حفظ المهمة: " + error.message;
+    } finally {
+      testButton.disabled = !connected;
     }
+  }
 
-    connectButton.addEventListener("click", connectServer);
-    testButton.addEventListener("click", runExample);
+  connectButton.addEventListener("click", connectCloud);
+  testButton.addEventListener("click", createTestTask);
+
+  connectCloud();
 })();
