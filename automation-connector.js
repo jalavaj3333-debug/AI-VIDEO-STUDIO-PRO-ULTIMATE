@@ -15,9 +15,17 @@
   }
 
   let connected = false;
+  let refreshTimer = null;
 
   function status(message) {
     connectionStatus.textContent = message;
+  }
+
+  function addLine(parent, label, value) {
+    if (value === null || value === undefined || value === "") return;
+    const line = document.createElement("small");
+    line.textContent = label + ": " + String(value);
+    parent.appendChild(line);
   }
 
   function showTasks(tasks) {
@@ -42,6 +50,26 @@
       meta.textContent = (task.task_type || "task") + " · " + (task.status || "unknown");
 
       item.append(title, meta);
+
+      addLine(item, "تاريخ الإنشاء", task.created_at);
+      addLine(item, "بداية التنفيذ", task.started_at);
+      addLine(item, "نهاية التنفيذ", task.completed_at);
+      addLine(item, "عدد المحاولات", task.attempts);
+
+      if (task.result) {
+        const resultLine = document.createElement("small");
+        resultLine.textContent = "النتيجة: " + (
+          typeof task.result === "string" ? task.result : JSON.stringify(task.result)
+        );
+        item.appendChild(resultLine);
+      }
+
+      if (task.error) {
+        const errorLine = document.createElement("small");
+        errorLine.textContent = "الخطأ: " + task.error;
+        item.appendChild(errorLine);
+      }
+
       tasksList.appendChild(item);
     }
   }
@@ -97,12 +125,23 @@
       connected = true;
       testButton.disabled = false;
       status("● متصل بالسحابة — " + session.user);
-      result.textContent = "الاتصال ناجح. المهام كتتسجل في قاعدة البيانات السحابية.";
+      result.textContent = "الاتصال ناجح. المهام والنتائج كتتحدث من قاعدة البيانات السحابية.";
 
       await loadTasks();
+
+      if (refreshTimer) clearInterval(refreshTimer);
+      refreshTimer = setInterval(() => {
+        if (connected) {
+          loadTasks().catch(error => {
+            console.warn("Task refresh failed:", error);
+          });
+        }
+      }, 15000);
     } catch (error) {
       status("غير متصل بالسحابة.");
       result.textContent = error.message;
+      if (refreshTimer) clearInterval(refreshTimer);
+      refreshTimer = null;
     } finally {
       connectButton.disabled = false;
     }
@@ -139,7 +178,7 @@
         throw new Error(data.error || "تعذر حفظ المهمة.");
       }
 
-      result.textContent = "تم حفظ مهمة الاختبار في قاعدة البيانات السحابية. هذه العملية تسجل المهمة فقط ولا تنفذها تلقائياً.";
+      result.textContent = "تم تسجيل المهمة. المحرك السحابي غادي يعالجها حسب الجدولة.";
       await loadTasks();
     } catch (error) {
       result.textContent = "فشل حفظ المهمة: " + error.message;
