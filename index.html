@@ -801,27 +801,27 @@
             <div class="section-heading">
                 <div>
                     <h2>🤖 AI Automation Studio</h2>
-                    <p>تحكم في المهام باستعمال محرك الأتمتة المحلي.</p>
+                    <p>ربط الاستوديو بخدمة Cloudflare وقاعدة المهام السحابية.</p>
                 </div>
             </div>
 
             <div class="trim-box">
-                <h3>Local Automation Engine</h3>
+                <h3>Cloud Automation</h3>
+                <p>تسجيل الدخول يتم عبر GitHub. لا تضع أي رمز سري داخل الموقع.</p>
 
-                <label for="automationToken">رمز الحماية المحلي</label>
-                <input
-                    type="password"
-                    id="automationToken"
-                    placeholder="ألصق رمز الحماية من CMD"
-                    autocomplete="off"
-                >
+                <p id="automationConnectionStatus" aria-live="polite">جاري التحقق من الاتصال...</p>
 
-                <p id="automationConnectionStatus">غير متصل بالسيرفر.</p>
-
-                <button id="automationConnect" type="button">🔌 اختبار الاتصال</button>
-                <button id="automationTest" type="button" disabled>🌐 فتح Example Domain</button>
+                <button id="automationConnect" type="button">🔌 إعادة اختبار الاتصال</button>
+                <button id="automationTest" type="button" disabled>＋ حفظ مهمة اختبار</button>
 
                 <p id="automationResult" aria-live="polite"></p>
+
+                <div class="automation-tasks">
+                    <h4>المهام المسجلة</h4>
+                    <div id="automationTasksList">
+                        <p>جاري تحميل المهام...</p>
+                    </div>
+                </div>
             </div>
         </section>
 
