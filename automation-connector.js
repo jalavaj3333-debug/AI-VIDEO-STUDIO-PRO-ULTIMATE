@@ -120,18 +120,20 @@
       const health = await healthResponse.json();
       const session = await sessionResponse.json();
 
-      if (!healthResponse.ok || health.status !== "online") {
+      // Worker /health returns { online: true }, not { status: "online" }.
+      if (!healthResponse.ok || health.online !== true) {
         throw new Error("خدمة Cloudflare Worker غير متاحة.");
       }
 
+      // Worker /auth/me returns the GitHub account in the "login" field.
       if (!sessionResponse.ok || !session.authenticated ||
-          session.user !== "jalavaj3333-debug") {
+          session.login !== "jalavaj3333-debug") {
         throw new Error("خاصك تسجل الدخول بحساب GitHub المصرح به.");
       }
 
       connected = true;
       testButton.disabled = false;
-      status("● متصل بالسحابة — " + session.user);
+      status("● متصل بالسحابة — " + session.login);
       result.textContent = "الاتصال ناجح. المهام والنتائج كتتحدث من قاعدة البيانات السحابية.";
 
       await loadTasks();
@@ -145,6 +147,8 @@
         }
       }, 15000);
     } catch (error) {
+      connected = false;
+      testButton.disabled = true;
       status("غير متصل بالسحابة.");
       result.textContent = error.message;
       if (refreshTimer) clearInterval(refreshTimer);
