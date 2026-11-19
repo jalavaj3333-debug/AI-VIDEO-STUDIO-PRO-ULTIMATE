@@ -3,7 +3,7 @@
 
   const API = "https://ai-video-studio-automation.jalavaj-3333.workers.dev";
   const LOGIN = API + "/auth/github";
-  const LOGOUT = API + "/auth/logout";
+  const SESSION_KEY = "avs_cloud_session";
 
   const style = document.createElement("style");
   style.textContent = `
@@ -31,13 +31,27 @@
     #avs-auth-screen .avs-note { display:block; margin-top:16px; font-size:12px; color:#8f8879; }
     #avs-auth-screen .avs-error { color:#ffb0a6; min-height:24px; font-size:13px; }
     .avs-user-chip { display:inline-flex; align-items:center; gap:10px; margin-inline-start:12px; }
-    .avs-user-chip a { color:#d8b76d; font-size:12px; text-decoration:none; }
+    .avs-user-chip button { color:#d8b76d; font-size:12px; background:transparent; border:0; cursor:pointer; }
   `;
   document.head.appendChild(style);
+
+  function takeTokenFromFragment() {
+    const hash = new URLSearchParams(location.hash.slice(1));
+    const token = hash.get("avs_session");
+    if (token) {
+      sessionStorage.setItem(SESSION_KEY, token);
+      history.replaceState(null, "", location.pathname + location.search);
+    }
+  }
+
+  function getToken() {
+    return sessionStorage.getItem(SESSION_KEY) || "";
+  }
 
   function showGate(message) {
     document.documentElement.classList.remove("auth-check");
     if (document.getElementById("avs-auth-screen")) return;
+
     const screen = document.createElement("div");
     screen.id = "avs-auth-screen";
     const card = document.createElement("div");
@@ -73,17 +87,22 @@
   }
 
   async function checkSession() {
+    takeTokenFromFragment();
+
     try {
       const response = await fetch(API + "/auth/me", {
         method: "GET",
-        credentials: "include",
         cache: "no-store",
-        headers: { "Accept": "application/json" }
+        headers: {
+          "Accept": "application/json",
+          ...(getToken() ? { "Authorization": "Bearer " + getToken() } : {})
+        }
       });
 
       const data = await response.json();
 
       if (!response.ok || !data.authenticated || data.user !== "jalavaj3333-debug") {
+        sessionStorage.removeItem(SESSION_KEY);
         showGate("");
         return;
       }
@@ -99,9 +118,13 @@
         const user = document.createElement("span");
         user.textContent = "GitHub: " + data.user;
 
-        const logout = document.createElement("a");
-        logout.href = LOGOUT;
+        const logout = document.createElement("button");
+        logout.type = "button";
         logout.textContent = "تسجيل الخروج";
+        logout.addEventListener("click", () => {
+          sessionStorage.removeItem(SESSION_KEY);
+          location.reload();
+        });
 
         chip.append(user, logout);
         topActions.appendChild(chip);
