@@ -103,22 +103,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
             }
 
-            if (file.type.startsWith("video/")) {
+            const clip = {
+                id: crypto.randomUUID(),
+                file: file,
+                url: URL.createObjectURL(file),
+                duration: file.type.startsWith("image/") ? 5 : 0,
+                kind: file.type.startsWith("image/") ? "image" : "video"
+            };
 
-                const clip = {
-                    id: crypto.randomUUID(),
-                    file: file,
-                    url: URL.createObjectURL(file),
-                    duration: 0
-                };
+            clips.push(clip);
 
-                clips.push(clip);
+            if (clip.kind === "video") {
                 readDuration(clip);
-
-            } else if (!clips.length) {
-
-                showImage(file);
-
             }
 
         });
@@ -224,27 +220,38 @@ document.addEventListener("DOMContentLoaded", () => {
 
         previewScreen.innerHTML = "";
 
-        previewVideo = document.createElement("video");
+        if (clip.kind === "image" || clip.file.type.startsWith("image/")) {
+            previewVideo = null;
 
-        previewVideo.src = clip.url;
-        previewVideo.controls = true;
-        previewVideo.preload = "metadata";
-        previewVideo.playsInline = true;
+            const img = document.createElement("img");
+            img.src = clip.url;
+            img.alt = clip.file.name;
+            previewScreen.appendChild(img);
 
-        previewScreen.appendChild(previewVideo);
+            mediaInfo.textContent = clip.file.name;
+            playBtn.textContent = "▧ صورة · 5 ثوانٍ";
+            updateInspector(clip.file.name, "صورة · " + formatTime(clip.duration));
+        } else {
+            previewVideo = document.createElement("video");
 
-        mediaInfo.textContent = clip.file.name;
-        playBtn.textContent = "▶ تشغيل";
-        updateInspector(clip.file.name, "فيديو · " + formatTime(clip.duration));
+            previewVideo.src = clip.url;
+            previewVideo.controls = true;
+            previewVideo.preload = "metadata";
+            previewVideo.playsInline = true;
 
-        previewVideo.addEventListener("ended", playNextClip);
+            previewScreen.appendChild(previewVideo);
 
-        if (autoplay) {
+            mediaInfo.textContent = clip.file.name;
+            playBtn.textContent = "▶ تشغيل";
+            updateInspector(clip.file.name, "فيديو · " + formatTime(clip.duration));
 
-            previewVideo.play().catch(() => {
-                playBtn.textContent = "▶ تشغيل";
-            });
+            previewVideo.addEventListener("ended", playNextClip);
 
+            if (autoplay) {
+                previewVideo.play().catch(() => {
+                    playBtn.textContent = "▶ تشغيل";
+                });
+            }
         }
 
         renderTimeline();
@@ -345,7 +352,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const duration = document.createElement("small");
 
             duration.textContent =
-                "مدة الفيديو: " + formatTime(clip.duration);
+                ((clip.kind === "image" || clip.file.type.startsWith("image/")) ? "مدة الصورة: " : "مدة الفيديو: ") + formatTime(clip.duration);
 
             details.append(name, duration);
 
