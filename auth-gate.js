@@ -101,7 +101,7 @@
 
       const data = await response.json();
 
-      if (!response.ok || !data.authenticated || data.user !== "jalavaj3333-debug") {
+      if (!response.ok || !data.authenticated || data.login !== "jalavaj3333-debug") {
         sessionStorage.removeItem(SESSION_KEY);
         showGate("");
         return;
