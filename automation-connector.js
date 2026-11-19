@@ -2,6 +2,7 @@
   "use strict";
 
   const API = "https://ai-video-studio-automation.jalavaj-3333.workers.dev";
+  const SESSION_KEY = "avs_cloud_session";
 
   const connectButton = document.getElementById("automationConnect");
   const testButton = document.getElementById("automationTest");
@@ -19,6 +20,10 @@
 
   function status(message) {
     connectionStatus.textContent = message;
+  }
+
+  function getToken() {
+    return sessionStorage.getItem(SESSION_KEY) || "";
   }
 
   function addLine(parent, label, value) {
@@ -75,12 +80,14 @@
   }
 
   async function api(path, options = {}) {
+    const token = getToken();
+
     return fetch(API + path, {
       ...options,
-      credentials: "include",
       cache: "no-store",
       headers: {
         "Accept": "application/json",
+        ...(token ? { "Authorization": "Bearer " + token } : {}),
         ...(options.headers || {})
       }
     });
