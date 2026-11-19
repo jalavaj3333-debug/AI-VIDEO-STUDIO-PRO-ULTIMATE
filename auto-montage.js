@@ -133,8 +133,11 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         clips.forEach((clip, index) => {
-            if (!clip.file || !clip.file.type?.startsWith("video/")) {
-                throw new Error(`المقطع ${index + 1} ليس فيديو صالحاً.`);
+            const isVideo = clip.file?.type?.startsWith("video/");
+            const isImage = clip.file?.type?.startsWith("image/");
+
+            if (!clip.file || (!isVideo && !isImage)) {
+                throw new Error(`المقطع ${index + 1} ليس صورة أو فيديو صالحاً.`);
             }
 
             if (
@@ -295,8 +298,9 @@ document.addEventListener("DOMContentLoaded", () => {
             const audioPresence = [];
 
             for (let i = 0; i < clips.length; i++) {
+                const isImage = clips[i].file.type.startsWith("image/");
                 updateStatus(
-                    `تحميل الفيديو ${i + 1}/${clips.length}...`
+                    `تحميل ${isImage ? "الصورة" : "الفيديو"} ${i + 1}/${clips.length}...`
                 );
 
                 const name =
@@ -311,11 +315,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 inputNames.push(name);
                 temporaryFiles.push(name);
 
-                updateStatus(`فحص الصوت في الفيديو ${i + 1}...`);
-
-                audioPresence.push(
-                    await hasAudioStream(ffmpeg, name)
-                );
+                if (isImage) {
+                    // Still images have no audio stream; a silent track is
+                    // created later so they can participate in transitions.
+                    audioPresence.push(false);
+                } else {
+                    updateStatus(`فحص الصوت في الفيديو ${i + 1}...`);
+                    audioPresence.push(await hasAudioStream(ffmpeg, name));
+                }
 
                 updateProgress(
                     5 + ((i + 1) / clips.length) * 25
@@ -485,8 +492,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const inputArguments = [];
 
-            inputNames.forEach(name => {
-                inputArguments.push("-i", name);
+            inputNames.forEach((name, index) => {
+                if (clips[index].file.type.startsWith("image/")) {
+                    // Loop each still image for its timeline duration.
+                    inputArguments.push(
+                        "-loop", "1",
+                        "-framerate", String(fps),
+                        "-t", String(durations[index]),
+                        "-i", name
+                    );
+                } else {
+                    inputArguments.push("-i", name);
+                }
             });
 
             if (musicFile) {
