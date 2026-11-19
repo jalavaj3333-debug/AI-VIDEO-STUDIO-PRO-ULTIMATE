@@ -6,6 +6,8 @@
 
   const connectButton = document.getElementById("automationConnect");
   const testButton = document.getElementById("automationTest");
+  const createVideoPlanButton = document.getElementById("automationCreateVideoPlan");
+  const videoPlanIdea = document.getElementById("videoPlanIdea");
   const connectionStatus = document.getElementById("automationConnectionStatus");
   const result = document.getElementById("automationResult");
   const tasksList = document.getElementById("automationTasksList");
@@ -133,6 +135,7 @@
 
       connected = true;
       testButton.disabled = false;
+      if (createVideoPlanButton) createVideoPlanButton.disabled = false;
       status("● متصل بالسحابة — " + session.login);
       result.textContent = "الاتصال ناجح. المهام والنتائج كتتحدث من قاعدة البيانات السحابية.";
 
@@ -149,6 +152,7 @@
     } catch (error) {
       connected = false;
       testButton.disabled = true;
+      if (createVideoPlanButton) createVideoPlanButton.disabled = true;
       status("غير متصل بالسحابة.");
       result.textContent = error.message;
       if (refreshTimer) clearInterval(refreshTimer);
@@ -198,8 +202,63 @@
     }
   }
 
+  async function createVideoPlan() {
+    if (!connected) {
+      result.textContent = "اختبر الاتصال السحابي أولاً.";
+      return;
+    }
+
+    const idea = String(videoPlanIdea?.value || "").trim();
+    if (!idea) {
+      result.textContent = "كتب فكرة الفيديو أولاً.";
+      return;
+    }
+
+    createVideoPlanButton.disabled = true;
+    result.textContent = "جاري تسجيل خطة الفيديو في السحابة...";
+
+    try {
+      const response = await api("/api/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          task_type: "video_plan",
+          title: "60 SECONDS OF WONDER — Secrets of the Deep Ocean",
+          payload: {
+            idea,
+            series: "60 SECONDS OF WONDER",
+            language: "English",
+            duration_seconds: 60,
+            aspect_ratio: "9:16",
+            format: "short_video",
+            platforms: ["youtube_shorts", "tiktok", "instagram_reels", "facebook_reels"],
+            audience: "general_global_audience",
+            style: "cinematic_mystery_educational",
+            factual_content: true,
+            require_user_approval_before_publishing: true
+          }
+        })
+      });
+
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "تعذر إنشاء خطة الفيديو.");
+      }
+
+      result.textContent = "تم تسجيل خطة الفيديو بنجاح. المحرك السحابي غادي يعالجها حسب الجدولة.";
+      await loadTasks();
+    } catch (error) {
+      result.textContent = "فشل إنشاء الخطة: " + error.message;
+    } finally {
+      createVideoPlanButton.disabled = !connected;
+    }
+  }
+
   connectButton.addEventListener("click", connectCloud);
   testButton.addEventListener("click", createTestTask);
+  if (createVideoPlanButton) {
+    createVideoPlanButton.addEventListener("click", createVideoPlan);
+  }
 
   connectCloud();
 })();
