@@ -199,6 +199,12 @@ document.addEventListener("DOMContentLoaded", () => {
         const temporaryFiles = [];
         let outputCreated = false;
 
+        // Lock immediately, before validation or any awaited FFmpeg loading.
+        // This prevents rapid repeated clicks from starting parallel exports.
+        isProcessing = true;
+        startButton.disabled = true;
+        startButton.textContent = "⏳ جاري تجهيز المونتاج...";
+
         try {
             const clips = window.getStudioClips?.() || [];
             const musicFile = musicInput?.files?.[0] || null;
@@ -252,8 +258,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 )
             );
 
-            isProcessing = true;
-            startButton.disabled = true;
             startButton.textContent = "⏳ جاري المونتاج...";
 
             updateProgress(0);
