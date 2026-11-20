@@ -62,7 +62,13 @@
   }
 
   fileInput.addEventListener("change", () => {
-    selectedVideo = fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
+    const file = fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
+    selectedVideo = file ? {
+      blob: file,
+      name: file.name,
+      type: file.type,
+      size: file.size
+    } : null;
     if (!selectedVideo) {
       fileInfo.textContent = "ما تم اختيار حتى فيديو.";
       return;
@@ -72,13 +78,27 @@
   });
 
   buildButton.addEventListener("click", () => {
+    if (!selectedVideo && window.aiVideoStudioLatestExport?.blob) {
+      const latest = window.aiVideoStudioLatestExport;
+      selectedVideo = {
+        blob: latest.blob,
+        name: latest.name || "AI-VIDEO-STUDIO-EXPORT.mp4",
+        type: latest.blob.type || "video/mp4",
+        size: latest.blob.size
+      };
+      fileInfo.textContent = selectedVideo.name + " · " +
+        (selectedVideo.size / (1024 * 1024)).toFixed(1) +
+        " MB · تم استلامه مباشرة من Auto Montage";
+    }
+
     const title = cleanText(titleInput.value, 100);
     const topic = cleanText(topicInput.value, 300);
     const description = cleanText(descriptionInput.value, 3000);
     const platform = platformInput.value;
     const language = languageInput.value;
 
-    if (!selectedVideo || !selectedVideo.type.startsWith("video/")) {
+    if (!selectedVideo || !selectedVideo.blob ||
+        !(selectedVideo.type || "").startsWith("video/")) {
       status.textContent = "اختار ملف فيديو صالح قبل تجهيز الحزمة.";
       return;
     }
@@ -97,6 +117,7 @@
       "AI VIDEO STUDIO PRO — PUBLISHING PACKAGE",
       "Platform: " + (platformNames[platform] || platform),
       "Video file: " + selectedVideo.name,
+      "Video size: " + (selectedVideo.size / (1024 * 1024)).toFixed(1) + " MB",
       "",
       "TITLE",
       title,
