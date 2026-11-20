@@ -59,6 +59,7 @@ let outputURL = null;
 
 let processing = false;
 let loading = false;
+let loadingPromise = null;
 
 // FFmpeg Core
 const CORE_BASE_URL =
@@ -189,140 +190,121 @@ input.addEventListener("change", () => {
 // LOAD FFMPEG ENGINE
 // ==========================================
 
-loadButton.addEventListener("click", async () => {
-    if (loaded || loading || processing) return;
+async function ensureVideoFFmpeg() {
+    if (loaded && ffmpeg) return ffmpeg;
+
+    if (processing) {
+        throw new Error("محرك FFmpeg مشغول حالياً بعملية أخرى.");
+    }
+
+    if (loadingPromise) return loadingPromise;
 
     loading = true;
     loadButton.disabled = true;
-
     setProgress(0);
 
-    try {
-        setStatus("1/4: إنشاء محرك FFmpeg...");
+    loadingPromise = (async () => {
+        try {
+            setStatus("1/4: إنشاء محرك FFmpeg...");
+            console.log("FFmpeg: Creating engine");
 
-        console.log("FFmpeg: Creating engine");
+            ffmpeg = new FFmpeg();
 
-        ffmpeg = new FFmpeg();
+            ffmpeg.on("log", ({ message }) => {
+                console.log("[FFmpeg]", message);
+            });
 
-        ffmpeg.on("log", ({ message }) => {
-            console.log("[FFmpeg]", message);
-        });
+            ffmpeg.on("progress", ({ progress }) => {
+                if (processing) setProgress(progress * 100);
+            });
 
-        ffmpeg.on("progress", ({ progress }) => {
-            if (processing) {
-                setProgress(progress * 100);
+            setProgress(10);
+            setStatus("2/4: تحميل ملفات Core وWASM...");
+            console.log("FFmpeg: Preparing Core resources");
+
+            const [coreURL, wasmURL] = await Promise.all([
+                toBlobURL(`${CORE_BASE_URL}/ffmpeg-core.js`, "text/javascript"),
+                toBlobURL(`${CORE_BASE_URL}/ffmpeg-core.wasm`, "application/wasm")
+            ]);
+
+            setProgress(55);
+            setStatus("3/4: التحقق من Worker المحلي...");
+            console.log("FFmpeg: Local Worker URL:", LOCAL_WORKER_URL);
+
+            const workerResponse = await fetch(LOCAL_WORKER_URL, {
+                method: "GET",
+                cache: "no-store"
+            });
+
+            if (!workerResponse.ok) {
+                throw new Error(
+                    `تعذر تحميل Worker المحلي. HTTP ${workerResponse.status}. تأكد من وجود ffmpeg/worker.js في GitHub.`
+                );
             }
-        });
 
-        // ==================================
-        // LOAD CORE FILES
-        // ==================================
+            setProgress(65);
+            setStatus("4/4: تشغيل محرك المونتاج...");
+            console.log("FFmpeg: Starting engine");
 
-        setProgress(10);
+            await ffmpeg.load({
+                coreURL,
+                wasmURL,
+                classWorkerURL: LOCAL_WORKER_URL
+            });
 
-        setStatus("2/4: تحميل ملفات Core وWASM...");
+            loaded = true;
+            window.videoFFmpeg = ffmpeg;
+            window.videoFFmpegLoaded = true;
 
-        console.log("FFmpeg: Preparing Core resources");
+            setProgress(100);
+            setStatus("✓ محرك المونتاج جاهز!");
+            loadButton.textContent = "✓ المحرك جاهز";
+            loadButton.disabled = true;
+            exportButton.disabled = !selectedFile;
 
-        const [coreURL, wasmURL] = await Promise.all([
-            toBlobURL(
-                `${CORE_BASE_URL}/ffmpeg-core.js`,
-                "text/javascript"
-            ),
+            console.log("FFmpeg loaded successfully.");
+            return ffmpeg;
 
-            toBlobURL(
-                `${CORE_BASE_URL}/ffmpeg-core.wasm`,
-                "application/wasm"
-            )
-        ]);
+        } catch (error) {
+            showError("FFmpeg Loading Error", error);
 
-        // ==================================
-        // CHECK LOCAL WORKER
-        // ==================================
+            loaded = false;
+            window.videoFFmpegLoaded = false;
+            window.videoFFmpeg = null;
+            setProgress(0);
 
-        setProgress(55);
-
-        setStatus("3/4: التحقق من Worker المحلي...");
-
-        console.log("FFmpeg: Local Worker URL:", LOCAL_WORKER_URL);
-
-        const workerResponse = await fetch(LOCAL_WORKER_URL, {
-            method: "GET",
-            cache: "no-store"
-        });
-
-        if (!workerResponse.ok) {
-            throw new Error(
-                `تعذر تحميل Worker المحلي. HTTP ${workerResponse.status}. تأكد من وجود ffmpeg/worker.js في GitHub.`
-            );
-        }
-
-        // ==================================
-        // START ENGINE
-        // ==================================
-
-        setProgress(65);
-
-        setStatus("4/4: تشغيل محرك المونتاج...");
-
-        console.log("FFmpeg: Starting engine");
-
-        await ffmpeg.load({
-            coreURL,
-            wasmURL,
-            classWorkerURL: LOCAL_WORKER_URL
-        });
-
-        // ==================================
-        // SUCCESS
-        // ==================================
-
-        loaded = true;
-
-        window.videoFFmpeg = ffmpeg;
-        window.videoFFmpegLoaded = true;
-
-        setProgress(100);
-
-        setStatus("✓ محرك المونتاج جاهز!");
-
-        loadButton.textContent = "✓ المحرك جاهز";
-        loadButton.disabled = true;
-
-        exportButton.disabled = !selectedFile;
-
-        console.log("FFmpeg loaded successfully.");
-
-    } catch (error) {
-        showError("FFmpeg Loading Error", error);
-
-        loaded = false;
-
-        window.videoFFmpegLoaded = false;
-        window.videoFFmpeg = null;
-
-        setProgress(0);
-
-        if (ffmpeg) {
-            try {
-                ffmpeg.terminate();
-            } catch (terminateError) {
-                console.warn("FFmpeg terminate error:", terminateError);
+            if (ffmpeg) {
+                try {
+                    ffmpeg.terminate();
+                } catch (terminateError) {
+                    console.warn("FFmpeg terminate error:", terminateError);
+                }
             }
+
+            ffmpeg = null;
+            loadButton.disabled = false;
+            loadButton.textContent = "تحميل محرك FFmpeg";
+            throw error;
+
+        } finally {
+            loading = false;
+            loadingPromise = null;
         }
+    })();
 
-        ffmpeg = null;
+    return loadingPromise;
+}
 
-        loadButton.disabled = false;
-        loadButton.textContent = "تحميل محرك FFmpeg";
+window.ensureVideoFFmpeg = ensureVideoFFmpeg;
 
-    } finally {
-        loading = false;
-    }
+loadButton.addEventListener("click", () => {
+    ensureVideoFFmpeg().catch(error => {
+        console.error("FFmpeg manual load failed:", error);
+    });
 });
 
 // ==========================================
-// EXPORT TRIMMED VIDEO
+// // EXPORT TRIMMED VIDEO
 // ==========================================
 
 exportButton.addEventListener("click", async () => {
