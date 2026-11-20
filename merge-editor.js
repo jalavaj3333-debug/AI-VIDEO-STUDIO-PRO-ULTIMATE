@@ -8,6 +8,7 @@ const mergeDownload = document.getElementById("mergeDownload");
 let mergeFiles = [];
 let mergeOutputURL = null;
 let isMerging = false;
+window.videoFFmpegBusy ??= null;
 
 function getFFmpeg() {
     return window.videoFFmpegLoaded && window.videoFFmpeg
@@ -87,6 +88,12 @@ if (
             return;
         }
 
+        if (window.videoFFmpegBusy) {
+            setMergeStatus("محرك FFmpeg مشغول بأداة أخرى. انتظر حتى تنتهي العملية الحالية.");
+            return;
+        }
+
+        window.videoFFmpegBusy = "video-merger";
         isMerging = true;
         mergeButton.disabled = true;
         mergeInput.disabled = true;
@@ -239,6 +246,9 @@ if (
             mergeButton.disabled = false;
             mergeInput.disabled = false;
             isMerging = false;
+            if (window.videoFFmpegBusy === "video-merger") {
+                window.videoFFmpegBusy = null;
+            }
         }
     });
 }
