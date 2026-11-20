@@ -60,6 +60,7 @@ let outputURL = null;
 let processing = false;
 let loading = false;
 let loadingPromise = null;
+window.videoFFmpegBusy ??= null;
 
 // FFmpeg Core
 const CORE_BASE_URL =
@@ -327,6 +328,12 @@ exportButton.addEventListener("click", async () => {
         return;
     }
 
+    if (window.videoFFmpegBusy) {
+        setStatus("محرك FFmpeg مشغول بأداة أخرى. انتظر حتى تنتهي العملية الحالية.");
+        return;
+    }
+
+    window.videoFFmpegBusy = "video-trimmer";
     processing = true;
 
     exportButton.disabled = true;
@@ -418,6 +425,9 @@ exportButton.addEventListener("click", async () => {
         await ffmpeg.deleteFile(outputName).catch(() => {});
 
         processing = false;
+        if (window.videoFFmpegBusy === "video-trimmer") {
+            window.videoFFmpegBusy = null;
+        }
 
         exportButton.disabled = !selectedFile || !loaded;
         loadButton.disabled = loaded;
