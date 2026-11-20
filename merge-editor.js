@@ -24,6 +24,22 @@ function setMergeProgress(value) {
         Math.max(0, Math.min(100, value)) + "%";
 }
 
+const mergeLoadFFmpeg = document.getElementById("mergeLoadFFmpeg");
+const trimLoadFFmpeg = document.getElementById("loadFFmpeg");
+
+mergeLoadFFmpeg?.addEventListener("click", () => {
+    if (window.videoFFmpegLoaded && window.videoFFmpeg) {
+        setMergeStatus("✓ محرك FFmpeg جاهز للدمج.");
+        return;
+    }
+    if (!trimLoadFFmpeg) {
+        setMergeStatus("زر تحميل محرك FFmpeg غير موجود.");
+        return;
+    }
+    setMergeStatus("جاري تحميل محرك FFmpeg من أداة التقطيع...");
+    trimLoadFFmpeg.click();
+});
+
 if (
     mergeInput &&
     mergeButton &&
