@@ -73,5 +73,13 @@ jobs:
             throw new Error('Publishing safety notice is missing.');
           }
 
-          console.log('Publishing package wiring checks passed.');
+          const montage = fs.readFileSync('auto-montage.js', 'utf8');
+          if (!montage.includes('window.aiVideoStudioLatestExport')) {
+            throw new Error('Auto Montage export is not handed off to the publishing workflow.');
+          }
+          if (!js.includes('window.aiVideoStudioLatestExport')) {
+            throw new Error('Publishing workflow does not consume the latest Auto Montage export.');
+          }
+
+          console.log('Publishing package and Auto Montage handoff checks passed.');
           NODE
