@@ -555,6 +555,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 type: "video/mp4"
             });
 
+            if (!blob.size) {
+                throw new Error("ملف الفيديو الناتج فارغ؛ لم يتم إنشاء رابط التحميل.");
+            }
+
             lastOutputURL = URL.createObjectURL(blob);
             outputCreated = true;
 
