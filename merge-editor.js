@@ -79,15 +79,6 @@ if (
             return;
         }
 
-        const engine = getFFmpeg();
-
-        if (!engine) {
-            setMergeStatus(
-                "حمّل محرك FFmpeg أولاً من أداة التقطيع."
-            );
-            return;
-        }
-
         if (window.videoFFmpegBusy) {
             setMergeStatus("محرك FFmpeg مشغول بأداة أخرى. انتظر حتى تنتهي العملية الحالية.");
             return;
@@ -99,6 +90,35 @@ if (
         mergeInput.disabled = true;
         mergeDownload.hidden = true;
         setMergeProgress(0);
+
+        let engine = getFFmpeg();
+
+        if (!engine && typeof window.ensureVideoFFmpeg === "function") {
+            setMergeStatus("جاري تحميل محرك FFmpeg تلقائياً...");
+            try {
+                engine = await window.ensureVideoFFmpeg();
+            } catch (error) {
+                setMergeStatus("تعذر تحميل محرك FFmpeg: " + (error?.message || String(error)));
+                isMerging = false;
+                mergeButton.disabled = false;
+                mergeInput.disabled = false;
+                if (window.videoFFmpegBusy === "video-merger") {
+                    window.videoFFmpegBusy = null;
+                }
+                return;
+            }
+        }
+
+        if (!engine) {
+            setMergeStatus("محرك FFmpeg غير متاح. تأكد من تحميل أداة FFmpeg.");
+            isMerging = false;
+            mergeButton.disabled = false;
+            mergeInput.disabled = false;
+            if (window.videoFFmpegBusy === "video-merger") {
+                window.videoFFmpegBusy = null;
+            }
+            return;
+        }
 
         const inputNames = [];
         const outputName = "AI_STUDIO_MERGED.mp4";
