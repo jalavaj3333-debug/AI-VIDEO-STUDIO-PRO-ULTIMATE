@@ -26,6 +26,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let isProcessing = false;
     let lastOutputURL = null;
+    window.videoFFmpegBusy ??= null;
 
     const OUTPUT_NAME = "SMAILLY_AI_AUTO_MONTAGE.mp4";
 
@@ -195,9 +196,22 @@ document.addEventListener("DOMContentLoaded", () => {
     async function createMontage() {
         if (isProcessing) return;
 
+        if (window.videoFFmpegBusy) {
+            updateStatus("محرك FFmpeg مشغول بأداة أخرى. انتظر حتى تنتهي العملية الحالية.");
+            return;
+        }
+
+        window.videoFFmpegBusy = "auto-montage";
+
         let ffmpeg = null;
         const temporaryFiles = [];
         let outputCreated = false;
+
+        // Lock immediately, before validation or any awaited FFmpeg loading.
+        // This prevents rapid repeated clicks from starting parallel exports.
+        isProcessing = true;
+        startButton.disabled = true;
+        startButton.textContent = "⏳ جاري تجهيز المونتاج...";
 
         try {
             const clips = window.getStudioClips?.() || [];
@@ -222,9 +236,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 throw new Error("اختار ملف موسيقى صالح.");
             }
 
+            if (typeof window.ensureVideoFFmpeg === "function") {
+                updateStatus("جاري تحميل محرك FFmpeg تلقائياً لأول استعمال...");
+                ffmpeg = await window.ensureVideoFFmpeg();
+            }
+
             if (!window.videoFFmpeg || !window.videoFFmpegLoaded) {
                 throw new Error(
-                    "محرك FFmpeg غير جاهز. حمّلو من أداة قص الفيديو أولاً."
+                    "تعذر تجهيز محرك FFmpeg. راجع أداة قص الفيديو وتأكد من تحميل Worker."
                 );
             }
 
@@ -247,8 +266,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 )
             );
 
-            isProcessing = true;
-            startButton.disabled = true;
             startButton.textContent = "⏳ جاري المونتاج...";
 
             updateProgress(0);
@@ -555,6 +572,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 type: "video/mp4"
             });
 
+            if (!blob.size) {
+                throw new Error("ملف الفيديو الناتج فارغ؛ لم يتم إنشاء رابط التحميل.");
+            }
+
             lastOutputURL = URL.createObjectURL(blob);
             outputCreated = true;
 
@@ -599,6 +620,9 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             isProcessing = false;
+            if (window.videoFFmpegBusy === "auto-montage") {
+                window.videoFFmpegBusy = null;
+            }
             startButton.disabled = false;
             startButton.textContent = "✨ ابدأ المونتاج التلقائي";
         }
