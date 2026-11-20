@@ -26,6 +26,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let isProcessing = false;
     let lastOutputURL = null;
+    window.videoFFmpegBusy ??= null;
 
     const OUTPUT_NAME = "SMAILLY_AI_AUTO_MONTAGE.mp4";
 
@@ -194,6 +195,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     async function createMontage() {
         if (isProcessing) return;
+
+        if (window.videoFFmpegBusy) {
+            updateStatus("محرك FFmpeg مشغول بأداة أخرى. انتظر حتى تنتهي العملية الحالية.");
+            return;
+        }
+
+        window.videoFFmpegBusy = "auto-montage";
 
         let ffmpeg = null;
         const temporaryFiles = [];
@@ -612,6 +620,9 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             isProcessing = false;
+            if (window.videoFFmpegBusy === "auto-montage") {
+                window.videoFFmpegBusy = null;
+            }
             startButton.disabled = false;
             startButton.textContent = "✨ ابدأ المونتاج التلقائي";
         }
