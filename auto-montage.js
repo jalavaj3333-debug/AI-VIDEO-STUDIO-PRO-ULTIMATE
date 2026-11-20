@@ -222,9 +222,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 throw new Error("اختار ملف موسيقى صالح.");
             }
 
+            if (typeof window.ensureVideoFFmpeg === "function") {
+                updateStatus("جاري تحميل محرك FFmpeg تلقائياً لأول استعمال...");
+                ffmpeg = await window.ensureVideoFFmpeg();
+            }
+
             if (!window.videoFFmpeg || !window.videoFFmpegLoaded) {
                 throw new Error(
-                    "محرك FFmpeg غير جاهز. حمّلو من أداة قص الفيديو أولاً."
+                    "تعذر تجهيز محرك FFmpeg. راجع أداة قص الفيديو وتأكد من تحميل Worker."
                 );
             }
 
