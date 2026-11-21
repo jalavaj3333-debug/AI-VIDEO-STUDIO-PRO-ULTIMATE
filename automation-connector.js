@@ -257,7 +257,32 @@
             factual_content: true,
             script,
             storyboard,
-            require_user_approval_before_publishing: true
+            require_user_approval_before_publishing: true,
+            pipeline: {
+              version: 1,
+              stages: [
+                { id: "plan", mode: "cloud_task", required: true },
+                { id: "storyboard", mode: "structured_scenes", required: true },
+                { id: "scene_images", mode: "workers_ai", required: true },
+                { id: "voiceover", mode: "provider_pending", required: false },
+                { id: "music_and_sfx", mode: "provider_pending", required: false },
+                { id: "render_mp4", mode: "browser_ffmpeg_current", required: false },
+                { id: "publish_package", mode: "client_side_metadata", required: true },
+                { id: "publish", mode: "manual_approval_and_official_api", required: true }
+              ],
+              render: {
+                container: "mp4",
+                video_codec: "h264",
+                audio_codec: "aac",
+                aspect_ratio: "9:16",
+                fps: 30,
+                target_duration_seconds: 60
+              },
+              approval: {
+                required_before_publish: true,
+                automatic_upload_enabled: false
+              }
+            }
           }
         })
       });

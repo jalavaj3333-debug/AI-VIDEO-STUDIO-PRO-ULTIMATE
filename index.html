@@ -58,6 +58,7 @@
                 <span class="menu-group-title">MANAGEMENT</span>
                 <a href="#projects" class="menu-item"><span>▤</span> مشاريعي</a>
                 <a href="#automationStudio" class="menu-item"><span>⚙</span> Automation Studio</a>
+                <a href="#publish-package" class="menu-item"><span>↗</span> تجهيز النشر</a>
             </div>
         </nav>
 
@@ -781,6 +782,60 @@
             </div>
         </section>
 
+        <!-- PUBLISHING PACKAGE BUILDER -->
+        <section class="section" id="publish-package">
+            <div class="section-heading">
+                <div>
+                    <h2>📦 تجهيز الفيديو للنشر</h2>
+                    <p>حضّر العنوان والوصف والهاشتاغات وملف معلومات النشر بعد تصدير MP4.</p>
+                </div>
+            </div>
+            <div class="creator-panel">
+                <label for="publishVideoFile">الفيديو النهائي MP4</label>
+                <input id="publishVideoFile" type="file" accept="video/mp4,video/*">
+                <p id="publishVideoInfo" class="tool-status">اختار الفيديو النهائي اللي صدّرتيه من الاستوديو.</p>
+
+                <div class="creator-controls">
+                    <label>المنصة المستهدفة
+                        <select id="publishPlatform">
+                            <option value="youtube_shorts">YouTube Shorts</option>
+                            <option value="tiktok">TikTok</option>
+                            <option value="instagram_reels">Instagram Reels</option>
+                            <option value="facebook_reels">Facebook Reels</option>
+                        </select>
+                    </label>
+                    <label>لغة المنشور
+                        <select id="publishLanguage">
+                            <option value="ar">العربية</option>
+                            <option value="fr">Français</option>
+                            <option value="en" selected>English</option>
+                        </select>
+                    </label>
+                </div>
+
+                <label for="publishTitle">عنوان الفيديو</label>
+                <input id="publishTitle" type="text" maxlength="100" placeholder="عنوان واضح وجذاب للفيديو">
+                <label for="publishTopic">موضوع الفيديو / الكلمات المفتاحية</label>
+                <input id="publishTopic" type="text" maxlength="300" placeholder="مثال: أسرار المحيط، الكائنات البحرية، العلوم">
+                <label for="publishDescription">معلومات إضافية (اختياري)</label>
+                <textarea id="publishDescription" rows="4" maxlength="3000" placeholder="ملخص قصير أو مصادر أو روابط مسموح بمشاركتها..."></textarea>
+                <label for="publishHashtags">هاشتاغات إضافية (اختياري)</label>
+                <input id="publishHashtags" type="text" maxlength="300" placeholder="#Ocean #Science">
+                <label class="audio-check">
+                    <input id="publishRightsConfirmed" type="checkbox">
+                    تأكدت أن عندي الحق فاستعمال الفيديو والصوت والصور وأن المحتوى مناسب للنشر.
+                </label>
+                <div class="creator-actions">
+                    <button id="buildPublishPackage" type="button">✨ تجهيز حزمة النشر</button>
+                    <button id="copyPublishPackage" type="button" class="secondary-btn" disabled>📋 نسخ المعلومات</button>
+                    <button id="downloadPublishPackage" type="button" class="secondary-btn" disabled>⬇ تحميل ملف المعلومات</button>
+                </div>
+                <p id="publishPackageStatus" class="tool-status" aria-live="polite">هاد الأداة كتوجد معلومات النشر فقط؛ ما كتنشرش تلقائياً.</p>
+                <label for="publishPackageOutput">حزمة النشر الجاهزة للنسخ</label>
+                <textarea id="publishPackageOutput" rows="12" readonly placeholder="العنوان والوصف والهاشتاغات غادي يظهرو هنا..."></textarea>
+            </div>
+        </section>
+
         <!-- PROJECTS -->
         <section class="section" id="projects">
             <div class="section-heading">
@@ -856,6 +911,7 @@
 <script src="ai-tools-hub.js"></script>
 <script src="prompt-builder.js"></script>
 <script src="automation-connector.js"></script>
+<script src="publish-package.js"></script>
 <script src="extract-audio.js"></script>
 
 </body>
