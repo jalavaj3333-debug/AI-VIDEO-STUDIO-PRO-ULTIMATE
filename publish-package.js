@@ -84,15 +84,27 @@
         blob: latest.blob,
         name: latest.name || "AI-VIDEO-STUDIO-EXPORT.mp4",
         type: latest.blob.type || "video/mp4",
-        size: latest.blob.size
+        size: latest.blob.size,
+        width: latest.width,
+        height: latest.height,
+        fps: latest.fps,
+        duration: latest.duration
       };
       fileInfo.textContent = selectedVideo.name + " · " +
         (selectedVideo.size / (1024 * 1024)).toFixed(1) +
-        " MB · تم استلامه مباشرة من Auto Montage";
+        " MB · تم استلامه مباشرة من Auto Montage" +
+        (selectedVideo.width && selectedVideo.height
+          ? " · " + selectedVideo.width + "×" + selectedVideo.height
+          : "") +
+        (selectedVideo.duration
+          ? " · " + selectedVideo.duration.toFixed(1) + " ثانية"
+          : "");
     }
 
-    const title = cleanText(titleInput.value, 100);
     const topic = cleanText(topicInput.value, 300);
+    const title = cleanText(titleInput.value, 100) ||
+      topic ||
+      cleanText(selectedVideo.name.replace(/\\.[^.]+$/, "").replace(/[_-]+/g, " "), 100);
     const description = cleanText(descriptionInput.value, 3000);
     const platform = platformInput.value;
     const language = languageInput.value;
@@ -103,10 +115,11 @@
       return;
     }
     if (!title) {
-      status.textContent = "كتب عنوان الفيديو أولاً.";
+      status.textContent = "ما قدرناش نولدو عنوان؛ كتب عنوان الفيديو.";
       titleInput.focus();
       return;
     }
+    if (!titleInput.value.trim()) titleInput.value = title;
     if (!rightsInput.checked) {
       status.textContent = "أكد أولاً أن عندك الحق فاستعمال جميع المواد داخل الفيديو.";
       return;
@@ -118,6 +131,11 @@
       "Platform: " + (platformNames[platform] || platform),
       "Video file: " + selectedVideo.name,
       "Video size: " + (selectedVideo.size / (1024 * 1024)).toFixed(1) + " MB",
+      selectedVideo.width && selectedVideo.height
+        ? "Resolution: " + selectedVideo.width + "x" + selectedVideo.height
+        : "",
+      selectedVideo.fps ? "Frame rate: " + selectedVideo.fps + " FPS" : "",
+      selectedVideo.duration ? "Duration: " + selectedVideo.duration.toFixed(1) + " seconds" : "",
       "",
       "TITLE",
       title,
