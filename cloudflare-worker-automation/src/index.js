@@ -449,7 +449,7 @@ async function buildVideoPlan(task, payload, env) {
       throw new Error("Workers AI returned an empty script response.");
     }
 
-    const cleaned = raw.trim().replace(/^```(?:json)?\\s*/i, "").replace(/\\s*```$/, "");
+    const cleaned = raw.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
     const firstBrace = cleaned.indexOf("{");
     const lastBrace = cleaned.lastIndexOf("}");
     if (firstBrace < 0 || lastBrace <= firstBrace) {
