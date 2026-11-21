@@ -421,7 +421,7 @@ async function buildVideoPlan(task, payload, env) {
       "Keep narration concise enough to fit the target duration.",
       "Make every scene visually distinct, coherent, and suitable for a vertical social video.",
       "Do not switch to an unrelated topic. Do not reuse a generic ocean or nature script unless that is the requested topic."
-    ].join("\\n");
+    ].join("\n");
 
     let aiResult;
     try {
