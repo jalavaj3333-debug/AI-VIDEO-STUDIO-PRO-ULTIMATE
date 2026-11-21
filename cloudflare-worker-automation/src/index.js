@@ -360,353 +360,213 @@ async function isApiAuthorized(request, env) {
 
 
 
-function buildVideoPlan(task, payload) {
-
+async function buildVideoPlan(task, payload, env) {
   const idea = String(payload.idea || task.title || "").trim();
 
-
-
   if (!idea || idea.length > MAX_IDEA_LENGTH) {
-
     throw new Error("Video idea is missing or too long.");
-
   }
 
-
-
   const language = String(payload.language || "English").slice(0, 30);
-
-
-
   const requestedDuration = Number(payload.duration_seconds || 60);
-
   const duration = Number.isFinite(requestedDuration)
-
     ? Math.min(Math.max(Math.round(requestedDuration), 10), 600)
-
     : 60;
 
-
-
-  // Accept both general platform names and the studio's platform IDs.
-
   const platformAliases = {
-
     youtube: "youtube_shorts",
-
     youtube_shorts: "youtube_shorts",
-
     tiktok: "tiktok",
-
     instagram: "instagram_reels",
-
     instagram_reels: "instagram_reels",
-
     facebook: "facebook_reels",
-
     facebook_reels: "facebook_reels"
-
   };
-
-
 
   const platforms = Array.isArray(payload.platforms)
-
     ? [...new Set(
-
         payload.platforms
-
           .filter(item => typeof item === "string")
-
           .map(item => platformAliases[item.trim().toLowerCase()])
-
           .filter(Boolean)
-
       )]
-
     : [];
 
+  let script = Array.isArray(payload.script) ? payload.script : [];
+  let generatedTitle = String(payload.generated_title || idea).slice(0, MAX_TITLE_LENGTH);
 
+  if (!script.length && Array.isArray(payload.storyboard) && payload.storyboard.length) {
+    script = payload.storyboard.map(scene => ({
+      time: scene.time || "",
+      narration: scene.narration || "",
+      visual: scene.visual_prompt || scene.visual || ""
+    }));
+  }
 
-  // Use supplied script when available; otherwise create a built-in script.
-
-  const defaultScript = [
-
-    {
-
-      time: "0-6s",
-
-      narration: "Beneath the ocean's surface lies a world almost untouched by sunlight.",
-
-      visual: "A cinematic descent from the bright ocean surface into deep blue water."
-
-    },
-
-    {
-
-      time: "6-13s",
-
-      narration: "As we descend, sunlight slowly disappears and the pressure becomes immense.",
-
-      visual: "A deep-sea depth indicator, fading light and drifting particles."
-
-    },
-
-    {
-
-      time: "13-20s",
-
-      narration: "Yet life thrives here, in forms that seem almost unreal.",
-
-      visual: "A documentary-style reveal of unusual deep-sea animals."
-
-    },
-
-    {
-
-      time: "20-27s",
-
-      narration: "Some creatures produce their own light through bioluminescence.",
-
-      visual: "A glowing jellyfish and tiny points of blue light in the darkness."
-
-    },
-
-    {
-
-      time: "27-34s",
-
-      narration: "Near the seafloor, hydrothermal vents release hot, mineral-rich water.",
-
-      visual: "Hydrothermal vent chimneys surrounded by deep-sea life."
-
-    },
-
-    {
-
-      time: "34-41s",
-
-      narration: "Some organisms survive there using energy from chemicals instead of sunlight.",
-
-      visual: "A close documentary view of life around a hydrothermal vent."
-
-    },
-
-    {
-
-      time: "41-48s",
-
-      narration: "Much of the deep ocean remains difficult for humans to explore.",
-
-      visual: "A research submersible moving across a vast dark seabed."
-
-    },
-
-    {
-
-      time: "48-55s",
-
-      narration: "Every expedition can reveal creatures and environments we have never seen.",
-
-      visual: "Submersible lights reveal an unfamiliar but scientifically plausible animal."
-
-    },
-
-    {
-
-      time: "55-60s",
-
-      narration: "The deep ocean still holds mysteries waiting to be discovered.",
-
-      visual: "Fade to black, glowing particles and the title THE DEEP IS STILL UNKNOWN."
-
+  if (!script.length) {
+    if (!env.AI || typeof env.AI.run !== "function") {
+      throw new Error("Workers AI binding is missing; cannot generate a topic-specific script.");
     }
 
-  ];
-
-
-
-  const suppliedScript = Array.isArray(payload.script)
-
-    ? payload.script
-
-    : [];
-
-
-
-  const script = suppliedScript.length
-
-    ? suppliedScript
-
-    : defaultScript;
-
-
-
-  const storyboard = Array.isArray(payload.storyboard) &&
-
-      payload.storyboard.length
-
-    ? payload.storyboard
-
-    : script.map((scene, index) => ({
-
-        scene: index + 1,
-
-        time: scene.time || "",
-
-        narration: scene.narration || "",
-
-        visual_prompt: scene.visual || scene.visual_prompt || "",
-
-        on_screen_text: index === 0
-
-          ? "SECRETS OF THE DEEP OCEAN"
-
-          : ""
-
-      }));
-
-
-
-  return {
-
-    success: true,
-
-    task_id: task.id,
-
-    task_type: "video_plan",
-
-    title: task.title,
-
-    idea,
-
-    language,
-
-    duration_seconds: duration,
-
-    aspect_ratio: payload.aspect_ratio || "9:16",
-
-    platforms,
-
-
-
-    script,
-
-    storyboard,
-
-
-
-    production_plan: [
-
-      {
-
-        step: 1,
-
-        name: "script",
-
-        status: "completed",
-
-        description: "Narration script generated successfully.",
-
-        scenes: script.length
-
-      },
-
-      {
-
-        step: 2,
-
-        name: "storyboard",
-
-        status: "completed",
-
-        description: "Scene-by-scene visual storyboard prepared.",
-
-        scenes: storyboard.length
-
-      },
-
-      {
-
-        step: 3,
-
-        name: "visuals",
-
-        status: "waiting_for_provider",
-
-        description: "Images and video clips require a connected media provider."
-
-      },
-
-      {
-
-        step: 4,
-
-        name: "voice_audio",
-
-        status: "waiting_for_provider",
-
-        description: "Voice narration, music and sound effects require audio tools."
-
-      },
-
-      {
-
-        step: 5,
-
-        name: "editing",
-
-        status: "waiting_for_media",
-
-        description: "Video assembly requires generated or imported media."
-
-      },
-
-      {
-
-        step: 6,
-
-        name: "export",
-
-        status: "waiting_for_media",
-
-        description: "Final video export is waiting for media and editing."
-
-      },
-
-      {
-
-        step: 7,
-
-        name: "publishing",
-
-        status: platforms.length
-
-          ? "waiting_for_approval"
-
-          : "not_requested",
-
-        description: "Publishing requires platform integration and user approval."
-
+    const sceneCount = Math.min(12, Math.max(3, Math.ceil(duration / 7)));
+    const prompt = [
+      "Create an original, engaging short-form video script and storyboard.",
+      "The result MUST be valid JSON only, with no Markdown fences or commentary.",
+      "Use exactly this JSON shape:",
+      '{"title":"...","scenes":[{"narration":"...","visual":"...","on_screen_text":"..."}]}',
+      `Topic/idea: ${idea}`,
+      `Language: ${language}`,
+      `Target duration: ${duration} seconds`,
+      `Create exactly ${sceneCount} scenes, with narration and visual descriptions relevant to THIS topic.`,
+      "Keep narration concise enough to fit the target duration.",
+      "Make every scene visually distinct, coherent, and suitable for a vertical social video.",
+      "Do not switch to an unrelated topic. Do not reuse a generic ocean or nature script unless that is the requested topic."
+    ].join("\\n");
+
+    let aiResult;
+    try {
+      aiResult = await env.AI.run("@cf/zai-org/glm-4.7-flash", {
+        messages: [
+          {
+            role: "system",
+            content: "You are an expert multilingual video writer and storyboard artist. Follow the requested topic and output valid JSON only."
+          },
+          { role: "user", content: prompt }
+        ],
+        max_tokens: Math.min(6000, 500 + sceneCount * 350),
+        temperature: 0.65
+      });
+    } catch (error) {
+      throw new Error(`AI script generation failed: ${String(error?.message || error).slice(0, 400)}`);
+    }
+
+    const raw = aiResult?.response ||
+      aiResult?.result?.response ||
+      aiResult?.choices?.[0]?.message?.content ||
+      aiResult?.output_text;
+
+    if (typeof raw !== "string" || !raw.trim()) {
+      throw new Error("Workers AI returned an empty script response.");
+    }
+
+    const cleaned = raw.trim().replace(/^```(?:json)?\\s*/i, "").replace(/\\s*```$/, "");
+    const firstBrace = cleaned.indexOf("{");
+    const lastBrace = cleaned.lastIndexOf("}");
+    if (firstBrace < 0 || lastBrace <= firstBrace) {
+      throw new Error("Workers AI did not return valid JSON for the video script.");
+    }
+
+    let generated;
+    try {
+      generated = JSON.parse(cleaned.slice(firstBrace, lastBrace + 1));
+    } catch {
+      throw new Error("Workers AI returned malformed JSON for the video script.");
+    }
+
+    if (!Array.isArray(generated.scenes) || generated.scenes.length < 1) {
+      throw new Error("Workers AI returned no usable scenes.");
+    }
+
+    generatedTitle = String(generated.title || idea).slice(0, MAX_TITLE_LENGTH);
+    const scenes = generated.scenes.slice(0, 20);
+    const sceneDuration = duration / scenes.length;
+
+    script = scenes.map((scene, index) => {
+      const startSeconds = Math.round(index * sceneDuration);
+      const endSeconds = Math.min(duration, Math.round((index + 1) * sceneDuration));
+      const narration = String(scene.narration || "").trim();
+      const visual = String(scene.visual || scene.visual_prompt || "").trim();
+
+      if (!narration || !visual) {
+        throw new Error(`AI generated an incomplete scene (${index + 1}). Please retry the task.`);
       }
 
+      return {
+        time: `${startSeconds}-${endSeconds}s`,
+        narration,
+        visual,
+        on_screen_text: String(scene.on_screen_text || "").slice(0, 160)
+      };
+    });
+  }
+
+  if (!script.length) {
+    throw new Error("No script scenes were supplied or generated.");
+  }
+
+  const storyboard = Array.isArray(payload.storyboard) && payload.storyboard.length
+    ? payload.storyboard
+    : script.map((scene, index) => ({
+        scene: index + 1,
+        time: scene.time || "",
+        narration: scene.narration || "",
+        visual_prompt: scene.visual || scene.visual_prompt || "",
+        on_screen_text: scene.on_screen_text || (index === 0 ? generatedTitle : "")
+      }));
+
+  return {
+    success: true,
+    task_id: task.id,
+    task_type: "video_plan",
+    title: task.title,
+    generated_title: generatedTitle,
+    idea,
+    language,
+    duration_seconds: duration,
+    aspect_ratio: payload.aspect_ratio || "9:16",
+    platforms,
+    script,
+    storyboard,
+    production_plan: [
+      {
+        step: 1,
+        name: "script",
+        status: "completed",
+        description: "Topic-specific narration script generated successfully.",
+        scenes: script.length
+      },
+      {
+        step: 2,
+        name: "storyboard",
+        status: "completed",
+        description: "Scene-by-scene visual storyboard prepared for the requested idea.",
+        scenes: storyboard.length
+      },
+      {
+        step: 3,
+        name: "visuals",
+        status: "waiting_for_provider",
+        description: "Scene images are generated by the connected Workers AI image model."
+      },
+      {
+        step: 4,
+        name: "voice_audio",
+        status: "waiting_for_provider",
+        description: "Voice narration, music and sound effects require audio tools."
+      },
+      {
+        step: 5,
+        name: "editing",
+        status: "waiting_for_media",
+        description: "Video assembly requires generated or imported media."
+      },
+      {
+        step: 6,
+        name: "export",
+        status: "waiting_for_media",
+        description: "Final video export is waiting for media and editing."
+      },
+      {
+        step: 7,
+        name: "publishing",
+        status: platforms.length ? "waiting_for_approval" : "not_requested",
+        description: "Publishing requires platform integration and user approval."
+      }
     ],
-
-
-
     require_user_approval_before_publishing: true,
-
-
-
-    note: "The script and storyboard are generated. Visual generation, voice production, rendering and publishing still require connected providers."
-
+    note: "The script and storyboard are generated for the submitted idea. Scene images are generated separately; voice production, MP4 rendering and publishing still require additional integrations."
   };
-
 }
-
-
-
-
 
 async function saveTaskResult(env, taskId, result) {
 
@@ -1276,7 +1136,7 @@ async function processTask(task, env) {
 
   if (task.task_type === "video_plan") {
 
-  const plan = buildVideoPlan(task, payload);
+  const plan = await buildVideoPlan(task, payload, env);
 
 
 
