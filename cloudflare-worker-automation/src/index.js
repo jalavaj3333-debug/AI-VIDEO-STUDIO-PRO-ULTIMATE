@@ -1454,7 +1454,7 @@ async function handleMediaGet(request, env, origin) {
 
   if (!key.startsWith("media/")) {
 
-    return json({ error: "Invalid media key." }, 400);
+    return json({ error: "Invalid media key." }, 400, corsHeaders(origin));
 
   }
 
@@ -1670,14 +1670,12 @@ export default {
 
     } catch (error) {
 
+      const origin = request.headers.get("Origin") || "";
+
       return json({
-
         success: false,
-
         error: error?.message || "Internal server error."
-
-      }, 500);
-
+      }, 500, corsHeaders(origin));
     }
 
   },
