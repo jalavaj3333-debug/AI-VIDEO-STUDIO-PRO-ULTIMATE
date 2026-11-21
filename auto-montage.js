@@ -559,6 +559,10 @@ document.addEventListener("DOMContentLoaded", () => {
             window.aiVideoStudioLatestExport = {
                 blob,
                 name: OUTPUT_NAME,
+                width: format.width,
+                height: format.height,
+                fps,
+                duration: finalDuration,
                 createdAt: new Date().toISOString()
             };
 
