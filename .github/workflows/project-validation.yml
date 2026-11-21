@@ -39,4 +39,47 @@ jobs:
           test -f automation-connector.js
           test -f ffmpeg-editor.js
           test -f merge-editor.js
+          test -f publish-package.js
           echo "Core files are present."
+
+      - name: Validate publishing package wiring
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const html = fs.readFileSync('index.html', 'utf8');
+          const js = fs.readFileSync('publish-package.js', 'utf8');
+
+          const requiredIds = [
+            'publishVideoFile',
+            'publishPlatform',
+            'publishTitle',
+            'publishRightsConfirmed',
+            'buildPublishPackage',
+            'publishPackageOutput',
+            'downloadPublishPackage'
+          ];
+
+          for (const id of requiredIds) {
+            if (!html.includes(`id="${id}"`)) {
+              throw new Error(`Missing publishing UI element: ${id}`);
+            }
+          }
+
+          if (!html.includes('src="publish-package.js"')) {
+            throw new Error('publish-package.js is not included in index.html.');
+          }
+
+          if (!js.includes('does not upload, schedule or publish')) {
+            throw new Error('Publishing safety notice is missing.');
+          }
+
+          const montage = fs.readFileSync('auto-montage.js', 'utf8');
+          if (!montage.includes('window.aiVideoStudioLatestExport')) {
+            throw new Error('Auto Montage export is not handed off to the publishing workflow.');
+          }
+          if (!js.includes('window.aiVideoStudioLatestExport')) {
+            throw new Error('Publishing workflow does not consume the latest Auto Montage export.');
+          }
+
+          console.log('Publishing package and Auto Montage handoff checks passed.');
+          NODE

@@ -555,6 +555,17 @@ document.addEventListener("DOMContentLoaded", () => {
                 type: "video/mp4"
             });
 
+            // Share the latest successful export with the publishing helper.
+            window.aiVideoStudioLatestExport = {
+                blob,
+                name: OUTPUT_NAME,
+                width: format.width,
+                height: format.height,
+                fps,
+                duration: finalDuration,
+                createdAt: new Date().toISOString()
+            };
+
             lastOutputURL = URL.createObjectURL(blob);
             outputCreated = true;
 
