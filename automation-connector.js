@@ -217,25 +217,7 @@
     createVideoPlanButton.disabled = true;
     result.textContent = "جاري إعداد السيناريو والـStoryboard وتسجيل الخطة...";
 
-    // Built-in starter script and storyboard; no paid AI API required.
-    const script = [
-      { time: "0-6s", narration: "Beneath the ocean's surface lies a world almost untouched by sunlight.", visual: "A cinematic descent from bright ocean surface into deep blue darkness; vertical 9:16." },
-      { time: "6-13s", narration: "At a thousand meters, sunlight disappears—and the pressure becomes immense.", visual: "Depth meter fades into darkness; particles drift through the water." },
-      { time: "13-20s", narration: "Yet life thrives here, in forms that seem almost unreal.", visual: "Slow reveal of unusual deep-sea animals, documentary-style and scientifically plausible." },
-      { time: "20-27s", narration: "Some creatures make their own light, using bioluminescence to hunt or communicate.", visual: "A glowing jellyfish and tiny points of blue light in the dark." },
-      { time: "27-34s", narration: "Others survive near deep-sea vents, where hot, mineral-rich water escapes the seafloor.", visual: "Hydrothermal vents with mineral chimneys and surrounding marine life." },
-      { time: "34-41s", narration: "These ecosystems challenge what we thought life needed to survive.", visual: "Wide shot of a vent ecosystem; subtle labels: heat, minerals, darkness." },
-      { time: "41-48s", narration: "And much of the deep ocean remains unexplored.", visual: "Research submersible lights sweep across an immense, unknown seabed." },
-      { time: "48-55s", narration: "Every expedition can reveal species and secrets we have never seen before.", visual: "Submersible camera discovers a mysterious but realistic creature; no exaggerated fantasy." },
-      { time: "55-60s", narration: "The deepest ocean may hold discoveries that change our understanding of Earth.", visual: "Fade to black with glowing ocean particles and title: THE DEEP IS STILL UNKNOWN." }
-    ];
-    const storyboard = script.map((scene, index) => ({
-      scene: index + 1,
-      time: scene.time,
-      narration: scene.narration,
-      visual_prompt: scene.visual,
-      on_screen_text: index === 0 ? "SECRETS OF THE DEEP OCEAN" : ""
-    }));
+    // Let the cloud Workers AI model create a script and storyboard for this exact idea.
 
     try {
       const response = await api("/api/tasks", {
@@ -243,17 +225,16 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           task_type: "video_plan",
-          title: "60 SECONDS OF WONDER — Secrets of the Deep Ocean",
+          title: idea.slice(0, 180),
           payload: {
             idea,
-            series: "60 SECONDS OF WONDER",
-            language: "English",
+            language: "Arabic",
             duration_seconds: 60,
             aspect_ratio: "9:16",
             format: "short_video",
             platforms: ["youtube_shorts", "tiktok", "instagram_reels", "facebook_reels"],
             audience: "general_global_audience",
-            style: "cinematic_mystery_educational",
+            style: "cinematic_educational",
             factual_content: true,
             script,
             storyboard,
