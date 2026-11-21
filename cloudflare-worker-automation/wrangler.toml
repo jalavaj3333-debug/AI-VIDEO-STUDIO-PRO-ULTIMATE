@@ -1,0 +1,18 @@
+name = "ai-video-studio-automation"
+main = "src/index.js"
+compatibility_date = "2026-11-12"
+
+[ai]
+binding = "AI"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "ai-video-studio-db"
+database_id = "f09d007b-c8e8-4fb0-a4e4-c95f3006ead0"
+
+[[kv_namespaces]]
+binding = "MEDIA_KV"
+id = "f4060a8e3aaa4545ac46616f666c7ce5"
+
+[triggers]
+crons = ["*/5 * * * *"]
