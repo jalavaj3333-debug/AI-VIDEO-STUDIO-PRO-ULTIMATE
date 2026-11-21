@@ -100,3 +100,20 @@ test("video_plan fails clearly when Workers AI returns malformed JSON", async ()
   assert.equal(capture.result, null);
   assert.match(capture.error, /valid JSON/);
 });
+
+test("video_plan accepts JSON wrapped in a Markdown code fence", async () => {
+  const generated = {
+    title: "A Short History of Bicycles",
+    scenes: [
+      { narration: "Early bicycles changed personal transport.", visual: "A vintage early bicycle on a quiet street." }
+    ]
+  };
+  const capture = await runScheduledTask({
+    payload: { idea: "The history of bicycles", duration_seconds: 10 },
+    modelResponse: "```json\\n" + JSON.stringify(generated) + "\\n```"
+  });
+
+  assert.equal(capture.error, null);
+  assert.equal(capture.result.generated_title, generated.title);
+  assert.equal(capture.result.script[0].time, "0-10s");
+});
