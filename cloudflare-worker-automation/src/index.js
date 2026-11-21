@@ -434,7 +434,9 @@ async function buildVideoPlan(task, payload, env) {
           { role: "user", content: prompt }
         ],
         max_tokens: Math.min(6000, 500 + sceneCount * 350),
-        temperature: 0.65
+        temperature: 0.65,
+        response_format: { type: "json_object" },
+        chat_template_kwargs: { enable_thinking: false }
       });
     } catch (error) {
       throw new Error(`AI script generation failed: ${String(error?.message || error).slice(0, 400)}`);
