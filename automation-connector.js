@@ -64,11 +64,105 @@
       addLine(item, "عدد المحاولات", task.attempts);
 
       if (task.result) {
-        const resultLine = document.createElement("small");
-        resultLine.textContent = "النتيجة: " + (
-          typeof task.result === "string" ? task.result : JSON.stringify(task.result)
-        );
-        item.appendChild(resultLine);
+        let resultData = task.result;
+        if (typeof resultData === "string") {
+          try {
+            resultData = JSON.parse(resultData);
+          } catch {
+            resultData = null;
+          }
+        }
+
+        if (resultData && typeof resultData === "object" &&
+            task.task_type === "video_plan") {
+          const details = document.createElement("details");
+          details.className = "automation-result-details";
+
+          const summary = document.createElement("summary");
+          summary.textContent = "عرض السيناريو والصور الناتجة";
+          details.appendChild(summary);
+
+          const generatedTitle = document.createElement("strong");
+          generatedTitle.textContent = resultData.generated_title || task.title || "خطة الفيديو";
+          details.appendChild(generatedTitle);
+
+          const imageCount = document.createElement("small");
+          imageCount.textContent = "الصور: " +
+            Number(resultData.generated_images || 0) + " / " +
+            Number(resultData.total_images || 0);
+          details.appendChild(imageCount);
+
+          if (Array.isArray(resultData.script)) {
+            for (const [index, scene] of resultData.script.entries()) {
+              const sceneCard = document.createElement("div");
+              sceneCard.className = "automation-scene-preview";
+
+              const sceneHeading = document.createElement("strong");
+              sceneHeading.textContent = "المشهد " + (index + 1) +
+                (scene.time ? " · " + scene.time : "");
+              sceneCard.appendChild(sceneHeading);
+
+              const narration = document.createElement("p");
+              narration.textContent = scene.narration || "";
+              sceneCard.appendChild(narration);
+
+              const visual = document.createElement("small");
+              visual.textContent = "الوصف البصري: " +
+                (scene.visual || scene.visual_prompt || "");
+              sceneCard.appendChild(visual);
+
+              details.appendChild(sceneCard);
+            }
+          }
+
+          if (Array.isArray(resultData.images)) {
+            const imageGrid = document.createElement("div");
+            imageGrid.className = "automation-generated-images";
+
+            for (const generatedImage of resultData.images) {
+              if (generatedImage.status !== "completed" || !generatedImage.media_url) continue;
+
+              let mediaUrl;
+              try {
+                mediaUrl = new URL(generatedImage.media_url);
+              } catch {
+                continue;
+              }
+
+              if (mediaUrl.protocol !== "https:" ||
+                  mediaUrl.hostname !== "ai-video-studio-automation.jalavaj-3333.workers.dev") {
+                continue;
+              }
+
+              const link = document.createElement("a");
+              link.href = mediaUrl.href;
+              link.target = "_blank";
+              link.rel = "noopener noreferrer";
+              link.title = "فتح صورة المشهد " + generatedImage.scene;
+
+              const image = document.createElement("img");
+              image.src = mediaUrl.href;
+              image.alt = "صورة المشهد " + generatedImage.scene;
+              image.loading = "lazy";
+              image.width = 144;
+              image.height = 256;
+
+              link.appendChild(image);
+              imageGrid.appendChild(link);
+            }
+
+            if (imageGrid.childElementCount) {
+              details.appendChild(imageGrid);
+            }
+          }
+
+          item.appendChild(details);
+        } else {
+          const resultLine = document.createElement("small");
+          resultLine.textContent = "النتيجة: " +
+            (typeof task.result === "string" ? task.result : JSON.stringify(task.result));
+          item.appendChild(resultLine);
+        }
       }
 
       if (task.error) {
