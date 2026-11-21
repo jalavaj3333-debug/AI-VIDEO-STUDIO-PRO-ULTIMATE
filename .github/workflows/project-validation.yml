@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - automation-quality-checks
+      - dynamic-ai-video-script
   pull_request:
     branches:
       - main
