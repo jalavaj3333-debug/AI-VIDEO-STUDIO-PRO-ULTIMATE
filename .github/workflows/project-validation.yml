@@ -40,3 +40,23 @@ jobs:
           test -f ffmpeg-editor.js
           test -f merge-editor.js
           echo "Core files are present."
+      - name: Validate cloud video pipeline manifest
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const source = fs.readFileSync('automation-connector.js', 'utf8');
+          const required = [
+            'pipeline:',
+            'scene_images',
+            'voiceover',
+            'music_and_sfx',
+            'render_mp4',
+            'publish_package',
+            'required_before_publish: true',
+            'automatic_upload_enabled: false'
+          ];
+          for (const value of required) {
+            if (!source.includes(value)) throw new Error('Missing pipeline field: ' + value);
+          }
+          console.log('Cloud video pipeline manifest checks passed.');
+          NODE
