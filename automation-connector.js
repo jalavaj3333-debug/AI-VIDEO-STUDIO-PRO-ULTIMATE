@@ -236,8 +236,6 @@
             audience: "general_global_audience",
             style: "cinematic_educational",
             factual_content: true,
-            script,
-            storyboard,
             require_user_approval_before_publishing: true
           }
         })
