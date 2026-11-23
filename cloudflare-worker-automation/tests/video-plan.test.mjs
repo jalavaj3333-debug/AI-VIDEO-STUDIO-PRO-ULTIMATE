@@ -84,6 +84,13 @@ test("video_plan generates a topic-specific script and duration-based storyboard
   assert.equal(capture.result.generated_title, generated.title);
   assert.equal(capture.result.script.length, 3);
   assert.equal(capture.result.storyboard.length, 3);
+  assert.equal(capture.result.voiceover_manifest.length, 3);
+  assert.equal(capture.result.audio_ready, false);
+  assert.deepEqual(capture.result.voiceover_manifest.map(item => item.audio_status), [
+    "not_generated", "not_generated", "not_generated"
+  ]);
+  assert.equal(capture.result.voiceover_manifest[0].narration_text, generated.scenes[0].narration);
+  assert.equal(capture.result.voiceover_manifest[0].language, "English");
   assert.deepEqual(capture.result.script.map(scene => scene.time), ["0-10s", "10-20s", "20-30s"]);
   assert.match(capture.prompts[0], /Why bees are important for the planet/);
   assert.match(capture.prompts[0], /30 seconds/);
