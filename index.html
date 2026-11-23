@@ -504,6 +504,28 @@
                 </div>
             </div>
 
+            <div class="voice-profile-card" style="margin:18px 0;padding:18px;border:1px solid #b58b3b;border-radius:14px;background:#111;">
+                <h3>🎙️ MY VOICE — ملف صوتي خاص</h3>
+                <p>سجّل عيّنة من صوتك بجودة واضحة. التسجيل كيبقى فهاد الجهاز وما كيتصيفط حتى لخدمة خارجية. غادي نحتاجو نربطو لاحقاً بمحرك استنساخ صوت بموافقتك.</p>
+                <label for="voiceSampleLanguage">لغة العينة</label>
+                <select id="voiceSampleLanguage" style="display:block;width:100%;max-width:320px;margin:8px 0;padding:10px;border-radius:8px;">
+                    <option value="ary">الدارجة المغربية</option>
+                    <option value="ar">العربية</option>
+                    <option value="fr">Français</option>
+                    <option value="en">English</option>
+                </select>
+                <p id="voiceSamplePrompt">مرحبا، هذا تسجيل تجريبي بصوتي. أحب أن أقدم لكم اليوم موضوعاً جديداً ومفيداً.</p>
+                <label style="display:block;margin:10px 0;"><input id="voiceSampleConsent" type="checkbox"> كنأكد أن هاد الصوت ديالي، وعندي الحق نستعملو لإنشاء صوت اصطناعي مشابه ليا.</label>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    <button id="voiceSampleStart" type="button">● بدء التسجيل</button>
+                    <button id="voiceSampleStop" type="button" disabled>■ إيقاف التسجيل</button>
+                    <button id="voiceSampleDownload" type="button" disabled>⬇ تحميل العينة</button>
+                </div>
+                <audio id="voiceSamplePreview" controls hidden style="width:100%;margin-top:12px;"></audio>
+                <p id="voiceSampleStatus" aria-live="polite">مازال ما تسجلات حتى عينة.</p>
+                <small>ملاحظة: هاد المرحلة كتسجل وتحضّر العينة فقط؛ مازال ما كاينش استنساخ صوت أو توليد تعليق تلقائي حتى نربطو محرك صوت مناسب.</small>
+            </div>
+
             <div class="audio-studio-grid">
 
                 <!-- ORIGINAL VIDEO -->
@@ -856,6 +878,7 @@
 <script src="ai-tools-hub.js"></script>
 <script src="prompt-builder.js"></script>
 <script src="automation-connector.js"></script>
+<script src="voice-profile.js"></script>
 <script src="extract-audio.js"></script>
 
 </body>
