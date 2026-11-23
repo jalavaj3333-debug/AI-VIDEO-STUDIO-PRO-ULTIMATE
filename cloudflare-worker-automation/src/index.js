@@ -1199,7 +1199,7 @@ async function processTask(task, env) {
       duration_seconds: plan.duration_seconds
     },
     scenes: plan.script.map((scene, index) => {
-      const match = String(scene.time || "").match(/(\\d+)\\s*-\\s*(\\d+)/);
+      const match = String(scene.time || "").match(/(\d+)\s*-\s*(\d+)/);
       const start = match ? Number(match[1]) : Math.round(index * plan.duration_seconds / plan.script.length);
       const end = match ? Number(match[2]) : Math.round((index + 1) * plan.duration_seconds / plan.script.length);
       const image = imageByScene.get(index + 1);
