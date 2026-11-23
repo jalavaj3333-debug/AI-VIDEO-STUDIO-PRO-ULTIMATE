@@ -86,6 +86,10 @@ test("video_plan generates a topic-specific script and duration-based storyboard
   assert.equal(capture.result.storyboard.length, 3);
   assert.equal(capture.result.voiceover_manifest.length, 3);
   assert.equal(capture.result.audio_ready, false);
+  assert.equal(capture.result.audio_pipeline.status, "provider_not_connected");
+  assert.equal(capture.result.audio_pipeline.enabled, false);
+  assert.equal(capture.result.audio_pipeline.requires_user_approval, true);
+  assert.equal(capture.result.audio_pipeline.output_format, "mp3");
   assert.deepEqual(capture.result.voiceover_manifest.map(item => item.audio_status), [
     "not_generated", "not_generated", "not_generated"
   ]);
