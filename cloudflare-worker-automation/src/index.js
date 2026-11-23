@@ -1211,9 +1211,13 @@ async function processTask(task, env) {
         visual_url: image?.status === "completed" ? image.media_url : null,
         visual_status: image?.status || "missing",
         narration_text: String(scene.narration || ""),
+        subtitle_text: String(scene.narration || ""),
+        on_screen_text: String(scene.on_screen_text || storyboard[index]?.on_screen_text || ""),
+        visual_prompt: String(scene.visual || scene.visual_prompt || storyboard[index]?.visual_prompt || ""),
         audio_url: null,
         audio_status: "not_generated",
-        transition_in: index === 0 ? "none" : "cut"
+        transition_in: index === 0 ? "none" : "cut",
+        transition_duration_seconds: index === 0 ? 0 : 0.5
       };
     }),
     audio: {
@@ -1221,7 +1225,19 @@ async function processTask(task, env) {
       music: "not_connected",
       sound_effects: "not_connected"
     },
-    export_status: "waiting_for_render_engine"
+    export_status: "waiting_for_render_engine",
+    readiness: {
+      scenes_valid: plan.script.length > 0,
+      visuals_complete: completed === images.length && images.length > 0,
+      audio_complete: false,
+      render_engine_connected: false,
+      ready_to_render: false,
+      missing: [
+        ...(completed !== images.length ? ["scene_visuals"] : []),
+        "voiceover_audio",
+        "render_engine"
+      ]
+    }
   };
 
   plan.generated_images = completed;
