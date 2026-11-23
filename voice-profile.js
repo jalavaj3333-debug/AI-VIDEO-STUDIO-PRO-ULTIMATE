@@ -28,6 +28,7 @@
     let recordingStream = null;
     let recordingBlob = null;
     let recordingUrl = null;
+    let recordingTimer = null;
     const DB_NAME = "avs-my-voice";
     const STORE_NAME = "samples";
 
@@ -144,6 +145,8 @@
           if (event.data && event.data.size) chunks.push(event.data);
         });
         recorder.addEventListener("stop", () => {
+          if (recordingTimer) window.clearTimeout(recordingTimer);
+          recordingTimer = null;
           recordingBlob = new Blob(chunks, { type: recorder.mimeType || "audio/webm" });
           showSample(recordingBlob);
           status.textContent = "تسجلات العينة بنجاح. سمعها، وإذا عجباتك حمّلها.";
@@ -154,8 +157,10 @@
 
         recorder.start(1000);
         status.textContent = "التسجيل خدام... هضر بوضوح وبلا ضجيج. غادي نوقفوه من بعد دقيقتين كحد أقصى.";
-        window.setTimeout(() => {
-          if (recorder && recorder.state === "recording") recorder.stop();
+        const activeRecorder = recorder;
+        recordingTimer = window.setTimeout(() => {
+          if (recorder === activeRecorder && activeRecorder.state === "recording") activeRecorder.stop();
+          recordingTimer = null;
         }, 120000);
       } catch (error) {
         releaseMicrophone();
@@ -166,6 +171,8 @@
     });
 
     stopButton.addEventListener("click", () => {
+      if (recordingTimer) window.clearTimeout(recordingTimer);
+      recordingTimer = null;
       if (recorder && recorder.state === "recording") recorder.stop();
     });
 
