@@ -106,6 +106,37 @@
               narration.textContent = scene.narration || "";
               sceneCard.appendChild(narration);
 
+              const speakButton = document.createElement("button");
+              speakButton.type = "button";
+              speakButton.textContent = "▶ استمع للتعليق";
+              speakButton.className = "automation-speak-scene";
+              speakButton.addEventListener("click", () => {
+                if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) {
+                  result.textContent = "المتصفح ما كيدعمش القراءة الصوتية. جرّب Chrome أو Edge.";
+                  return;
+                }
+                const textToRead = String(scene.narration || "").trim();
+                if (!textToRead) return;
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(textToRead);
+                const languageCode = String(resultData.language || "Arabic").toLowerCase();
+                utterance.lang = languageCode.includes("darija") || languageCode.includes("moroccan")
+                  ? "ar-MA"
+                  : languageCode.startsWith("fr") || languageCode.includes("french")
+                    ? "fr-FR"
+                    : languageCode.startsWith("en") || languageCode.includes("english")
+                      ? "en-US"
+                      : "ar";
+                const availableVoices = window.speechSynthesis.getVoices();
+                const languagePrefix = utterance.lang.slice(0, 2);
+                const matchingVoice = availableVoices.find(voice =>
+                  voice.lang && voice.lang.toLowerCase().startsWith(languagePrefix)
+                );
+                if (matchingVoice) utterance.voice = matchingVoice;
+                window.speechSynthesis.speak(utterance);
+              });
+              sceneCard.appendChild(speakButton);
+
               const visual = document.createElement("small");
               visual.textContent = "الوصف البصري: " +
                 (scene.visual || scene.visual_prompt || "");
