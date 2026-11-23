@@ -107,6 +107,12 @@ test("video_plan generates a topic-specific script and duration-based storyboard
   assert.equal(capture.result.render_manifest.scenes[0].visual_status, "completed");
   assert.equal(capture.result.render_manifest.scenes[0].audio_status, "not_generated");
   assert.equal(capture.result.render_manifest.export_status, "waiting_for_render_engine");
+  assert.equal(capture.result.render_manifest.readiness.ready_to_render, false);
+  assert.equal(capture.result.render_manifest.readiness.audio_complete, false);
+  assert.equal(capture.result.render_manifest.readiness.render_engine_connected, false);
+  assert.equal(capture.result.render_manifest.scenes[0].subtitle_text, generated.scenes[0].narration);
+  assert.equal(capture.result.render_manifest.scenes[0].on_screen_text, "POLLINATORS");
+  assert.equal(capture.result.render_manifest.scenes[1].transition_in, "cut");
   assert.equal(capture.stored.length, 3);
 });
 
