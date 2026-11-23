@@ -99,6 +99,14 @@ test("video_plan generates a topic-specific script and duration-based storyboard
   assert.match(capture.prompts[0], /Why bees are important for the planet/);
   assert.match(capture.prompts[0], /30 seconds/);
   assert.equal(capture.result.generated_images, 3);
+  assert.equal(capture.result.render_manifest.status, "prepared_not_rendered");
+  assert.equal(capture.result.render_manifest.target.container, "mp4");
+  assert.equal(capture.result.render_manifest.target.fps, 30);
+  assert.equal(capture.result.render_manifest.scenes.length, 3);
+  assert.deepEqual(capture.result.render_manifest.scenes.map(scene => [scene.start_seconds, scene.end_seconds]), [[0, 10], [10, 20], [20, 30]]);
+  assert.equal(capture.result.render_manifest.scenes[0].visual_status, "completed");
+  assert.equal(capture.result.render_manifest.scenes[0].audio_status, "not_generated");
+  assert.equal(capture.result.render_manifest.export_status, "waiting_for_render_engine");
   assert.equal(capture.stored.length, 3);
 });
 
