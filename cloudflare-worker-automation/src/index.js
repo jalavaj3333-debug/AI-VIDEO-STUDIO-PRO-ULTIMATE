@@ -496,6 +496,17 @@ async function buildVideoPlan(task, payload, env) {
     throw new Error("No script scenes were supplied or generated.");
   }
 
+  const voiceoverManifest = script.map((scene, index) => ({
+    scene: index + 1,
+    time: scene.time || "",
+    narration_text: String(scene.narration || "").trim(),
+    language,
+    audio_status: "not_generated",
+    provider: null,
+    audio_url: null,
+    estimated_duration_seconds: null
+  }));
+
   const storyboard = Array.isArray(payload.storyboard) && payload.storyboard.length
     ? payload.storyboard
     : script.map((scene, index) => ({
@@ -518,6 +529,8 @@ async function buildVideoPlan(task, payload, env) {
     aspect_ratio: payload.aspect_ratio || "9:16",
     platforms,
     script,
+    voiceover_manifest: voiceoverManifest,
+    audio_ready: false,
     storyboard,
     production_plan: [
       {
