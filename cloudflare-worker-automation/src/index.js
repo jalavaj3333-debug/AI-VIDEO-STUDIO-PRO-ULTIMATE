@@ -530,6 +530,16 @@ async function buildVideoPlan(task, payload, env) {
     platforms,
     script,
     voiceover_manifest: voiceoverManifest,
+    audio_pipeline: {
+      enabled: false,
+      provider: null,
+      output_format: "mp3",
+      sample_rate_hz: 48000,
+      bitrate_kbps: 192,
+      voice_style: "neutral",
+      requires_user_approval: true,
+      status: "provider_not_connected"
+    },
     audio_ready: false,
     storyboard,
     production_plan: [
