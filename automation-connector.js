@@ -93,6 +93,55 @@
           details.appendChild(imageCount);
 
           if (Array.isArray(resultData.script)) {
+            const narrationControls = document.createElement("div");
+            narrationControls.className = "automation-narration-controls";
+            const playAllButton = document.createElement("button");
+            playAllButton.type = "button";
+            playAllButton.textContent = "▶ استمع لجميع المشاهد";
+            const stopAllButton = document.createElement("button");
+            stopAllButton.type = "button";
+            stopAllButton.textContent = "■ إيقاف القراءة";
+            stopAllButton.disabled = true;
+            playAllButton.addEventListener("click", () => {
+              if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) {
+                result.textContent = "المتصفح ما كيدعمش القراءة الصوتية. جرّب Chrome أو Edge.";
+                return;
+              }
+              const scenesToRead = resultData.script.map(scene => String(scene.narration || "").trim()).filter(Boolean);
+              if (!scenesToRead.length) return;
+              window.speechSynthesis.cancel();
+              const languageCode = String(resultData.language || "Arabic").toLowerCase();
+              const speechLanguage = languageCode.includes("darija") || languageCode.includes("moroccan") ? "ar-MA" :
+                languageCode.startsWith("fr") || languageCode.includes("french") ? "fr-FR" :
+                languageCode.startsWith("en") || languageCode.includes("english") ? "en-US" : "ar";
+              const voices = window.speechSynthesis.getVoices();
+              const voice = voices.find(item => item.lang && item.lang.toLowerCase().startsWith(speechLanguage.slice(0, 2)));
+              playAllButton.disabled = true;
+              stopAllButton.disabled = false;
+              let currentIndex = 0;
+              const speakNext = () => {
+                if (currentIndex >= scenesToRead.length) {
+                  playAllButton.disabled = false;
+                  stopAllButton.disabled = true;
+                  playAllButton.textContent = "↻ إعادة الاستماع لجميع المشاهد";
+                  return;
+                }
+                const utterance = new SpeechSynthesisUtterance(scenesToRead[currentIndex++]);
+                utterance.lang = speechLanguage;
+                if (voice) utterance.voice = voice;
+                utterance.onend = speakNext;
+                utterance.onerror = () => { playAllButton.disabled = false; stopAllButton.disabled = true; };
+                window.speechSynthesis.speak(utterance);
+              };
+              speakNext();
+            });
+            stopAllButton.addEventListener("click", () => {
+              if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+              playAllButton.disabled = false;
+              stopAllButton.disabled = true;
+            });
+            narrationControls.append(playAllButton, stopAllButton);
+            details.appendChild(narrationControls);
             for (const [index, scene] of resultData.script.entries()) {
               const sceneCard = document.createElement("div");
               sceneCard.className = "automation-scene-preview";
