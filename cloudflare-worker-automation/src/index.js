@@ -1187,6 +1187,43 @@ async function processTask(task, env) {
 
   plan.images = images;
 
+  const imageByScene = new Map(images.map(image => [image.scene, image]));
+  plan.render_manifest = {
+    status: "prepared_not_rendered",
+    target: {
+      container: "mp4",
+      video_codec: "h264",
+      audio_codec: "aac",
+      aspect_ratio: plan.aspect_ratio || "9:16",
+      fps: 30,
+      duration_seconds: plan.duration_seconds
+    },
+    scenes: plan.script.map((scene, index) => {
+      const match = String(scene.time || "").match(/(\\d+)\\s*-\\s*(\\d+)/);
+      const start = match ? Number(match[1]) : Math.round(index * plan.duration_seconds / plan.script.length);
+      const end = match ? Number(match[2]) : Math.round((index + 1) * plan.duration_seconds / plan.script.length);
+      const image = imageByScene.get(index + 1);
+      return {
+        scene: index + 1,
+        start_seconds: start,
+        end_seconds: end,
+        duration_seconds: Math.max(0, end - start),
+        visual_url: image?.status === "completed" ? image.media_url : null,
+        visual_status: image?.status || "missing",
+        narration_text: String(scene.narration || ""),
+        audio_url: null,
+        audio_status: "not_generated",
+        transition_in: index === 0 ? "none" : "cut"
+      };
+    }),
+    audio: {
+      voiceover: "not_generated",
+      music: "not_connected",
+      sound_effects: "not_connected"
+    },
+    export_status: "waiting_for_render_engine"
+  };
+
   plan.generated_images = completed;
 
   plan.total_images = images.length;
