@@ -127,6 +127,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
     }
 
+    // Import generated image files from the cloud production pipeline.
+    // Durations come from the render manifest when available.
+    window.addStudioFiles = function (files, durations = []) {
+        if (!Array.isArray(files) || !files.length) return 0;
+        const previousCount = clips.length;
+        addFiles(files);
+        const added = clips.slice(previousCount);
+        added.forEach((clip, index) => {
+            const duration = Number(durations[index]);
+            if (clip.kind === "image" && Number.isFinite(duration) && duration > 0) {
+                clip.duration = Math.min(600, Math.max(1, duration));
+            }
+        });
+        renderTimeline();
+        return added.length;
+    };
+
     // =====================================
     // READ VIDEO DURATION
     // =====================================
