@@ -56,7 +56,11 @@
       const existingClips = window.getStudioClips?.() || [];
       if (existingClips.length && !importedTaskIds.has(taskId)) {
         const proceed = window.confirm("Timeline فيها مقاطع موجودة. الصور الجديدة غادي تزيد فالآخر، والتصدير غادي يشمل جميع المقاطع. واش نكمل؟");
-        if (!proceed) return;
+        if (!proceed) {
+          button.disabled = false;
+          button.textContent = "🎬 إنشاء MP4 من صور المشاهد";
+          return;
+        }
       }
 
       if (!importedTaskIds.has(taskId)) {
