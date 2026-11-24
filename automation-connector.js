@@ -19,6 +19,8 @@
 
   let connected = false;
   let refreshTimer = null;
+  const activeBuilds = new Set();
+  const importedTaskIds = new Set();
 
   function status(message) {
     connectionStatus.textContent = message;
@@ -33,6 +35,100 @@
     const line = document.createElement("small");
     line.textContent = label + ": " + String(value);
     parent.appendChild(line);
+  }
+
+  function wait(milliseconds) {
+    return new Promise(resolve => setTimeout(resolve, milliseconds));
+  }
+
+  async function createMp4FromGeneratedScenes(resultData, taskId, button) {
+    if (activeBuilds.has(taskId)) return;
+    activeBuilds.add(taskId);
+    button.disabled = true;
+    button.textContent = "⏳ جاري تجهيز الفيديو...";
+
+    try {
+      const completedImages = (Array.isArray(resultData.images) ? resultData.images : [])
+        .filter(image => image.status === "completed" && image.media_url)
+        .sort((a, b) => Number(a.scene) - Number(b.scene));
+      if (!completedImages.length) throw new Error("ما كايناش صور مكتملة لهاد المهمة.");
+
+      const existingClips = window.getStudioClips?.() || [];
+      if (existingClips.length && !importedTaskIds.has(taskId)) {
+        const proceed = window.confirm("Timeline فيها مقاطع موجودة. الصور الجديدة غادي تزيد فالآخر، والتصدير غادي يشمل جميع المقاطع. واش نكمل؟");
+        if (!proceed) return;
+      }
+
+      if (!importedTaskIds.has(taskId)) {
+        const manifestScenes = Array.isArray(resultData.render_manifest?.scenes) ? resultData.render_manifest.scenes : [];
+        const durationByScene = new Map(manifestScenes.map(scene => [Number(scene.scene), Number(scene.duration_seconds)]));
+        const files = await Promise.all(completedImages.map(async (generatedImage, index) => {
+          const mediaUrl = new URL(generatedImage.media_url);
+          if (mediaUrl.protocol !== "https:" || mediaUrl.hostname !== "ai-video-studio-automation.jalavaj-3333.workers.dev" || !mediaUrl.pathname.startsWith("/media/")) {
+            throw new Error("رابط صورة المشهد غير موثوق.");
+          }
+          const response = await fetch(mediaUrl.href, { cache: "no-store" });
+          if (!response.ok) throw new Error("تعذر تحميل صورة المشهد " + generatedImage.scene + ": HTTP " + response.status);
+          const blob = await response.blob();
+          if (!blob.type.startsWith("image/")) throw new Error("الملف ديال المشهد " + generatedImage.scene + " ماشي صورة صالحة.");
+          const sceneNumber = Number(generatedImage.scene) || index + 1;
+          const extension = blob.type.includes("png") ? "png" : "jpg";
+          return new File([blob], "AI_SCENE_" + String(sceneNumber).padStart(2, "0") + "." + extension, { type: blob.type });
+        }));
+        const durations = completedImages.map(image => {
+          const duration = durationByScene.get(Number(image.scene));
+          return Number.isFinite(duration) && duration > 0 ? duration : 5;
+        });
+        if (typeof window.addStudioFiles !== "function") throw new Error("واجهة Timeline مازال ما وجداتش استيراد الصور.");
+        const imported = window.addStudioFiles(files, durations);
+        if (imported !== files.length) throw new Error("ما قدرناش نضيفو جميع صور المشاهد للـ Timeline.");
+        importedTaskIds.add(taskId);
+      }
+
+      document.getElementById("editor")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      const ratioSelect = document.getElementById("autoMontageRatio") || document.getElementById("videoRatio");
+      if (ratioSelect && Array.from(ratioSelect.options).some(option => option.value === "9:16")) ratioSelect.value = "9:16";
+
+      if (!window.videoFFmpegLoaded || !window.videoFFmpeg) {
+        const loadButton = document.getElementById("loadFFmpeg");
+        if (!loadButton) throw new Error("زر تحميل محرك FFmpeg غير موجود.");
+        loadButton.click();
+        const loadStartedAt = Date.now();
+        while (!window.videoFFmpegLoaded && Date.now() - loadStartedAt < 120000) await wait(500);
+        if (!window.videoFFmpegLoaded || !window.videoFFmpeg) {
+          const loadStatus = document.getElementById("trimStatus")?.textContent || "";
+          throw new Error(loadStatus || "محرك FFmpeg ما تحملش داخل المهلة المحددة.");
+        }
+      }
+
+      const montageButton = document.getElementById("smartAutoMontage");
+      const downloadLink = document.getElementById("autoMontageDownload");
+      const montageStatus = document.getElementById("autoMontageStatus");
+      if (!montageButton || !downloadLink || !montageStatus) throw new Error("عناصر التصدير التلقائي ما لقايناهش.");
+      downloadLink.hidden = true;
+      downloadLink.removeAttribute("href");
+      montageButton.click();
+
+      const renderStartedAt = Date.now();
+      while (Date.now() - renderStartedAt < 600000) {
+        if (!downloadLink.hidden && downloadLink.href) {
+          result.textContent = "MP4 واجد للتحميل. هاد المرحلة كتجمع صور المشاهد؛ التعليق الصوتي الآلي مازال ما مربوطش.";
+          downloadLink.scrollIntoView({ behavior: "smooth", block: "center" });
+          button.textContent = "✓ الفيديو واجد — عاود التصدير";
+          return;
+        }
+        const currentStatus = montageStatus.textContent || "";
+        if (currentStatus.startsWith("تعذر إنشاء الفيديو:")) throw new Error(currentStatus);
+        await wait(1000);
+      }
+      throw new Error("تصدير الفيديو طول بزاف وما وصلناش لملف التحميل.");
+    } catch (error) {
+      result.textContent = "تعذر إنشاء الفيديو من صور المشاهد: " + (error?.message || String(error));
+      button.textContent = "إعادة المحاولة لإنشاء MP4";
+    } finally {
+      activeBuilds.delete(taskId);
+      button.disabled = false;
+    }
   }
 
   function showTasks(tasks) {
@@ -233,6 +329,16 @@
 
             if (imageGrid.childElementCount) {
               details.appendChild(imageGrid);
+              const renderButton = document.createElement("button");
+              renderButton.type = "button";
+              renderButton.className = "automation-render-scenes";
+              renderButton.textContent = "🎬 إنشاء MP4 من صور المشاهد";
+              renderButton.disabled = activeBuilds.has(task.id);
+              renderButton.addEventListener("click", () => createMp4FromGeneratedScenes(resultData, task.id, renderButton));
+              details.appendChild(renderButton);
+              const renderNote = document.createElement("small");
+              renderNote.textContent = "كيستورد الصور للـ Timeline وكيشغل FFmpeg تلقائياً. هاد المرحلة ما كتولدش التعليق الصوتي.";
+              details.appendChild(renderNote);
             }
           }
 
