@@ -534,6 +534,14 @@
                 <p>سجّل جملاً قصيرة بصوتك واحفظها فهاد المتصفح. اختار المقاطع بالترتيب ثم أضفها لمسار الصوت بالتتابع. ما كاين حتى رفع للسيرفر.</p>
                 <label for="voicePhraseText">النص اللي غادي تقراه فالتسجيل</label>
                 <textarea id="voicePhraseText" rows="2" maxlength="500" style="display:block;width:100%;margin:8px 0;padding:10px;" placeholder="مثال: السلام عليكم، مرحبا بكم في فيديو جديد."></textarea>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin:10px 0;">
+                    <label>اسم المشروع
+                        <input id="voicePhraseProject" type="text" maxlength="80" value="عام" placeholder="مثال: فيديو تعليمي" style="display:block;width:100%;padding:10px;margin-top:6px;">
+                    </label>
+                    <label>البحث في المكتبة
+                        <input id="voicePhraseSearch" type="search" placeholder="قلب بالنص أو اسم المشروع..." style="display:block;width:100%;padding:10px;margin-top:6px;">
+                    </label>
+                </div>
                 <div style="display:flex;gap:8px;flex-wrap:wrap;">
                     <button id="voicePhraseStart" type="button">● تسجيل الجملة</button>
                     <button id="voicePhraseStop" type="button" disabled>■ إيقاف التسجيل</button>
