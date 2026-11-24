@@ -21,6 +21,7 @@
   let refreshTimer = null;
   const activeBuilds = new Set();
   const importedTaskIds = new Set();
+  const importedNarrationTaskIds = new Set();
 
   function status(message) {
     connectionStatus.textContent = message;
@@ -39,6 +40,105 @@
 
   function wait(milliseconds) {
     return new Promise(resolve => setTimeout(resolve, milliseconds));
+  }
+
+  function normalizeNarrationText(value) {
+    return String(value || "")
+      .normalize("NFKC")
+      .toLowerCase()
+      .replace(/[\\u064B-\\u065F\\u0670]/g, "")
+      .replace(/\\u0640/g, "")
+      .replace(/[^\\p{L}\\p{N}\\s]/gu, " ")
+      .replace(/\\s+/g, " ")
+      .trim();
+  }
+
+  async function readLocalVoicePhrases() {
+    if (!window.indexedDB) throw new Error("التخزين المحلي غير متاح فهاد المتصفح.");
+    const db = await new Promise((resolve, reject) => {
+      const request = indexedDB.open("avs-voice-phrase-library", 1);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error || new Error("تعذر فتح مكتبة التسجيلات المحلية."));
+    });
+    try {
+      return await new Promise((resolve, reject) => {
+        const transaction = db.transaction("phrases", "readonly");
+        const request = transaction.objectStore("phrases").getAll();
+        request.onsuccess = () => resolve(Array.isArray(request.result) ? request.result : []);
+        request.onerror = () => reject(request.error || new Error("تعذر قراءة التسجيلات."));
+      });
+    } finally {
+      db.close();
+    }
+  }
+
+  async function addMatchingRecordedNarration(resultData, taskId) {
+    if (importedNarrationTaskIds.has(taskId)) {
+      return { added: 0, missing: 0, alreadyAdded: true };
+    }
+    if (!window.AIVideoTimelineAudio?.importFromAudioStudio) {
+      throw new Error("مسارات الصوت مازال ما تحمّلوش. حدّث الصفحة وحاول مرة أخرى.");
+    }
+
+    const scenes = Array.isArray(resultData.script) ? resultData.script : [];
+    if (!scenes.length) throw new Error("السيناريو ما فيه حتى مشهد صوتي.");
+    const phrases = await readLocalVoicePhrases();
+    const phraseByText = new Map();
+
+    for (const phrase of phrases) {
+      const key = normalizeNarrationText(phrase.text);
+      if (!key || !phrase.blob || !phrase.blob.size) continue;
+      const previous = phraseByText.get(key);
+      if (!previous || Number(phrase.createdAt || 0) > Number(previous.createdAt || 0)) {
+        phraseByText.set(key, phrase);
+      }
+    }
+
+    const manifestScenes = Array.isArray(resultData.render_manifest?.scenes)
+      ? resultData.render_manifest.scenes : [];
+    const durationByScene = new Map(
+      manifestScenes.map(scene => [Number(scene.scene), Number(scene.duration_seconds)])
+    );
+
+    let offset = 0;
+    let missing = 0;
+    const entries = [];
+
+    scenes.forEach((scene, index) => {
+      const sceneNumber = Number(scene.scene) || index + 1;
+      const duration = durationByScene.get(sceneNumber);
+      const sceneDuration = Number.isFinite(duration) && duration > 0
+        ? duration
+        : (Number(scene.duration_seconds) > 0 ? Number(scene.duration_seconds) : 5);
+      const narration = normalizeNarrationText(scene.narration);
+      const phrase = narration ? phraseByText.get(narration) : null;
+
+      if (phrase) {
+        const mimeType = phrase.mimeType || phrase.blob.type || "audio/webm";
+        const extension = mimeType.includes("ogg") ? "ogg"
+          : mimeType.includes("wav") ? "wav"
+          : mimeType.includes("mpeg") ? "mp3"
+          : mimeType.includes("mp4") ? "m4a" : "webm";
+        const file = new File(
+          [phrase.blob],
+          "recorded-narration-scene-" + String(sceneNumber).padStart(2, "0") + "." + extension,
+          { type: mimeType, lastModified: Number(phrase.createdAt) || Date.now() }
+        );
+        entries.push({
+          file,
+          settings: { startTime: offset, volume: 1, fadeIn: 0, fadeOut: 0 }
+        });
+      } else if (String(scene.narration || "").trim()) {
+        missing++;
+      }
+
+      offset += sceneDuration;
+    });
+
+    if (!entries.length) return { added: 0, missing, alreadyAdded: false };
+    await window.AIVideoTimelineAudio.importFromAudioStudio(entries);
+    importedNarrationTaskIds.add(taskId);
+    return { added: entries.length, missing, alreadyAdded: false };
   }
 
   async function createMp4FromGeneratedScenes(resultData, taskId, button) {
@@ -193,6 +293,36 @@
           details.appendChild(imageCount);
 
           if (Array.isArray(resultData.script)) {
+            const voiceMatchControls = document.createElement("div");
+            voiceMatchControls.className = "automation-voice-match-controls";
+            const voiceMatchButton = document.createElement("button");
+            voiceMatchButton.type = "button";
+            voiceMatchButton.textContent = "🎙️ إضافة تسجيلاتي المطابقة إلى الفيديو";
+            const voiceMatchStatus = document.createElement("small");
+            voiceMatchStatus.textContent = "كيستعمل غير التسجيلات المطابقة الموجودة محلياً فهاد المتصفح، بلا رفع الصوت للسيرفر.";
+            voiceMatchButton.addEventListener("click", async () => {
+              voiceMatchButton.disabled = true;
+              voiceMatchStatus.textContent = "جاري البحث عن تسجيلات مطابقة لنصوص المشاهد...";
+              try {
+                const matchResult = await addMatchingRecordedNarration(resultData, task.id);
+                if (matchResult.alreadyAdded) {
+                  voiceMatchStatus.textContent = "التسجيلات المطابقة تزادو من قبل لهاد المهمة.";
+                } else if (!matchResult.added) {
+                  voiceMatchStatus.textContent = "ما لقيناش تسجيلات مطابقة. سجّل نفس جمل التعليق فمكتبة الصوت أولاً.";
+                } else {
+                  voiceMatchStatus.textContent = "✓ تزادو " + matchResult.added + " تسجيلات للمسارات الصوتية. " +
+                    (matchResult.missing ? "باقي " + matchResult.missing + " جمل بلا تسجيل مطابق." : "جميع الجمل لقات تسجيل مطابق.") +
+                    " راجع التوقيت فـ Timeline قبل التصدير.";
+                }
+              } catch (error) {
+                voiceMatchStatus.textContent = "تعذرت إضافة التسجيلات: " + (error?.message || String(error));
+              } finally {
+                voiceMatchButton.disabled = false;
+              }
+            });
+            voiceMatchControls.append(voiceMatchButton, voiceMatchStatus);
+            details.appendChild(voiceMatchControls);
+
             const narrationControls = document.createElement("div");
             narrationControls.className = "automation-narration-controls";
             const playAllButton = document.createElement("button");
