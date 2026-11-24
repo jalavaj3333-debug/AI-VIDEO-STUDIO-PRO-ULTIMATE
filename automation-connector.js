@@ -46,10 +46,10 @@
     return String(value || "")
       .normalize("NFKC")
       .toLowerCase()
-      .replace(/[\\u064B-\\u065F\\u0670]/g, "")
-      .replace(/\\u0640/g, "")
-      .replace(/[^\\p{L}\\p{N}\\s]/gu, " ")
-      .replace(/\\s+/g, " ")
+      .replace(/[\u064B-\u065F\u0670]/g, "")
+      .replace(/\u0640/g, "")
+      .replace(/[^\p{L}\p{N}\s]/gu, " ")
+      .replace(/\s+/g, " ")
       .trim();
   }
 
