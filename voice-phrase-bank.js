@@ -24,6 +24,8 @@
     let pendingUrl = null;
     let phrases = [];
     let recordingTimer = null;
+    let activePhraseText = "";
+    const previewUrls = [];
 
     function openDb() {
       return new Promise((resolve, reject) => {
@@ -66,6 +68,8 @@
     }
 
     function render() {
+      previewUrls.forEach(url => URL.revokeObjectURL(url));
+      previewUrls.length = 0;
       list.replaceChildren();
       if (!phrases.length) {
         const empty = document.createElement("p");
@@ -88,6 +92,7 @@
         audio.controls = true;
         audio.preload = "none";
         audio.src = URL.createObjectURL(phrase.blob);
+        previewUrls.push(audio.src);
         audio.style.maxWidth = "220px";
         const remove = document.createElement("button");
         remove.type = "button";
@@ -115,6 +120,7 @@
       stream = null;
       startButton.disabled = false;
       stopButton.disabled = true;
+      textInput.disabled = false;
     }
 
     startButton.addEventListener("click", async () => {
@@ -133,6 +139,8 @@
         return;
       }
       try {
+        activePhraseText = phraseText;
+        textInput.disabled = true;
         chunks = [];
         pendingBlob = null;
         saveButton.disabled = true;
@@ -181,7 +189,7 @@
       if (!pendingBlob?.size) return;
       const phrase = {
         id: crypto.randomUUID ? crypto.randomUUID() : "phrase-" + Date.now() + "-" + Math.random().toString(16).slice(2),
-        text: textInput.value.trim(),
+        text: activePhraseText,
         blob: pendingBlob,
         mimeType: pendingBlob.type,
         createdAt: Date.now()
@@ -267,11 +275,8 @@
     window.addEventListener("beforeunload", () => {
       releaseMic();
       if (pendingUrl) URL.revokeObjectURL(pendingUrl);
-      list.querySelectorAll("audio").forEach(audio => {
-        const url = audio.src;
-        audio.pause();
-        if (url.startsWith("blob:")) URL.revokeObjectURL(url);
-      });
+      list.querySelectorAll("audio").forEach(audio => audio.pause());
+      previewUrls.forEach(url => URL.revokeObjectURL(url));
     });
 
     refresh().catch(error => {
