@@ -241,7 +241,7 @@
       const renderStartedAt = Date.now();
       while (Date.now() - renderStartedAt < 600000) {
         if (!downloadLink.hidden && downloadLink.href) {
-          result.textContent = "MP4 واجد للتحميل. هاد المرحلة كتجمع صور المشاهد؛ التعليق الصوتي الآلي مازال ما مربوطش.";
+          result.textContent = "MP4 واجد للتحميل." + narrationNote + " التسجيلات اللي تطابق نص المشاهد تضافت تلقائياً؛ الجمل اللي ما عندهاش تسجيل مطابق ما غاديش يكون عندها تعليق صوتي.";
           downloadLink.scrollIntoView({ behavior: "smooth", block: "center" });
           button.textContent = "✓ الفيديو واجد — عاود التصدير";
           return;
