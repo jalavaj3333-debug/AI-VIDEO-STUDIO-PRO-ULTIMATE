@@ -103,13 +103,20 @@
     let offset = 0;
     let missing = 0;
     const entries = [];
+    const sceneDurations = scenes.map((scene, index) => {
+      const sceneNumber = Number(scene.scene) || index + 1;
+      const duration = durationByScene.get(sceneNumber);
+      return Number.isFinite(duration) && duration > 0
+        ? duration
+        : (Number(scene.duration_seconds) > 0 ? Number(scene.duration_seconds) : 5);
+    });
+    const transitionDuration = scenes.length < 2
+      ? 0
+      : Math.min(0.8, ...sceneDurations.map(duration => duration * 0.2));
 
     scenes.forEach((scene, index) => {
       const sceneNumber = Number(scene.scene) || index + 1;
-      const duration = durationByScene.get(sceneNumber);
-      const sceneDuration = Number.isFinite(duration) && duration > 0
-        ? duration
-        : (Number(scene.duration_seconds) > 0 ? Number(scene.duration_seconds) : 5);
+      const sceneDuration = sceneDurations[index];
       const narration = normalizeNarrationText(scene.narration);
       const phrase = narration ? phraseByText.get(narration) : null;
 
@@ -132,7 +139,9 @@
         missing++;
       }
 
-      offset += sceneDuration;
+      // Match the montage's crossfade overlap so narration stays aligned
+      // with the visible start of each scene.
+      offset += sceneDuration - (index < scenes.length - 1 ? transitionDuration : 0);
     });
 
     if (!entries.length) return { added: 0, missing, alreadyAdded: false };
@@ -189,6 +198,21 @@
         importedTaskIds.add(taskId);
       }
 
+      // Add any exact local narration matches automatically before rendering.
+      // Missing phrases never block the image montage.
+      let narrationNote = "";
+      try {
+        const narrationResult = await addMatchingRecordedNarration(resultData, taskId);
+        if (narrationResult.added) {
+          narrationNote = " تمت إضافة " + narrationResult.added + " تسجيلات صوتية مطابقة تلقائياً.";
+          if (narrationResult.missing) narrationNote += " بقيت " + narrationResult.missing + " جمل بلا تسجيل مطابق.";
+        } else if (narrationResult.missing) {
+          narrationNote = " ما لقيناش تسجيلات مطابقة لـ " + narrationResult.missing + " جمل؛ الفيديو غادي يتصدر بلا هاد التعليق.";
+        }
+      } catch (narrationError) {
+        narrationNote = " تعذر استيراد التسجيلات المحلية: " + (narrationError?.message || String(narrationError));
+      }
+
       document.getElementById("editor")?.scrollIntoView({ behavior: "smooth", block: "start" });
       const ratioSelect = document.getElementById("autoMontageRatio") || document.getElementById("videoRatio");
       if (ratioSelect && Array.from(ratioSelect.options).some(option => option.value === "9:16")) ratioSelect.value = "9:16";
@@ -211,6 +235,7 @@
       if (!montageButton || !downloadLink || !montageStatus) throw new Error("عناصر التصدير التلقائي ما لقايناهش.");
       downloadLink.hidden = true;
       downloadLink.removeAttribute("href");
+      if (narrationNote) result.textContent = narrationNote;
       montageButton.click();
 
       const renderStartedAt = Date.now();
