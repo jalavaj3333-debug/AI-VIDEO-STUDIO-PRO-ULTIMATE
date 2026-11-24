@@ -6,10 +6,12 @@ on:
       - main
       - automation-quality-checks
       - dynamic-ai-video-script
+      - local-voice-phrase-bank
   pull_request:
     branches:
       - main
       - fix-automation-media-route
+      - dynamic-ai-video-script
   workflow_dispatch:
 
 jobs:
