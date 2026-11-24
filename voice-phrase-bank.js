@@ -4,6 +4,8 @@
   document.addEventListener("DOMContentLoaded", () => {
     const $ = id => document.getElementById(id);
     const textInput = $("voicePhraseText");
+    const projectInput = $("voicePhraseProject");
+    const searchInput = $("voicePhraseSearch");
     const startButton = $("voicePhraseStart");
     const stopButton = $("voicePhraseStop");
     const saveButton = $("voicePhraseSave");
@@ -25,6 +27,7 @@
     let phrases = [];
     let recordingTimer = null;
     let activePhraseText = "";
+    let activeProjectText = "عام";
     const previewUrls = [];
 
     function openDb() {
@@ -63,7 +66,7 @@
 
     async function refresh() {
       phrases = (await dbAction("readonly", store => store.getAll())) || [];
-      phrases.sort((a, b) => a.createdAt - b.createdAt);
+      phrases.sort((a, b) => (Number(a.sortOrder) || Number(a.createdAt) || 0) - (Number(b.sortOrder) || Number(b.createdAt) || 0));
       render();
     }
 
@@ -71,12 +74,22 @@
       previewUrls.forEach(url => URL.revokeObjectURL(url));
       previewUrls.length = 0;
       list.replaceChildren();
+      const query = (searchInput?.value || "").trim().toLocaleLowerCase();
+      const visiblePhrases = phrases.filter(phrase =>
+        !query || (String(phrase.text || "") + " " + String(phrase.project || "عام"))
+          .toLocaleLowerCase().includes(query)
+      );
       if (!phrases.length) {
         const empty = document.createElement("p");
         empty.textContent = "مكتبة المقاطع مازال فارغة.";
         list.appendChild(empty);
       }
-      phrases.forEach((phrase, index) => {
+      if (phrases.length && !visiblePhrases.length) {
+        const empty = document.createElement("p");
+        empty.textContent = "ما لقينا حتى مقطع مطابق للبحث.";
+        list.appendChild(empty);
+      }
+      visiblePhrases.forEach((phrase, index) => {
         const row = document.createElement("div");
         row.style.cssText = "display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 0;border-top:1px solid #333;";
         const check = document.createElement("input");
@@ -87,7 +100,7 @@
         check.setAttribute("aria-label", "اختيار المقطع " + (index + 1));
         const label = document.createElement("span");
         label.style.flex = "1";
-        label.textContent = (index + 1) + ". " + phrase.text;
+        label.textContent = (index + 1) + ". " + phrase.text + " — 📁 " + (phrase.project || "عام");
         const audio = document.createElement("audio");
         audio.controls = true;
         audio.preload = "none";
@@ -107,11 +120,53 @@
             status.textContent = "تعذر الحذف: " + error.message;
           }
         });
-        row.append(check, label, audio, remove);
+        const moveUp = document.createElement("button");
+        moveUp.type = "button";
+        moveUp.textContent = "↑";
+        moveUp.title = "تقديم المقطع";
+        moveUp.disabled = phrases.findIndex(item => item.id === phrase.id) === 0;
+        moveUp.addEventListener("click", () => movePhrase(phrase.id, -1));
+        const moveDown = document.createElement("button");
+        moveDown.type = "button";
+        moveDown.textContent = "↓";
+        moveDown.title = "تأخير المقطع";
+        moveDown.disabled = phrases.findIndex(item => item.id === phrase.id) === phrases.length - 1;
+        moveDown.addEventListener("click", () => movePhrase(phrase.id, 1));
+        row.append(check, label, audio, moveUp, moveDown, remove);
         list.appendChild(row);
       });
       addButton.disabled = !phrases.length;
     }
+
+    async function movePhrase(id, delta) {
+      const from = phrases.findIndex(item => item.id === id);
+      const to = from + delta;
+      if (from < 0 || to < 0 || to >= phrases.length) return;
+      [phrases[from], phrases[to]] = [phrases[to], phrases[from]];
+      const db = await openDb();
+      try {
+        await new Promise((resolve, reject) => {
+          const tx = db.transaction(STORE, "readwrite");
+          const store = tx.objectStore(STORE);
+          phrases.forEach((phrase, index) => {
+            phrase.sortOrder = index;
+            store.put(phrase);
+          });
+          tx.oncomplete = resolve;
+          tx.onerror = () => reject(tx.error);
+          tx.onabort = () => reject(tx.error || new Error("تعذر حفظ الترتيب."));
+        });
+        render();
+        status.textContent = "تحفظ الترتيب الجديد محلياً.";
+      } catch (error) {
+        status.textContent = "تعذر تغيير الترتيب: " + error.message;
+        await refresh();
+      } finally {
+        db.close();
+      }
+    }
+
+    searchInput?.addEventListener("input", render);
 
     function releaseMic() {
       if (recordingTimer) clearTimeout(recordingTimer);
@@ -140,6 +195,7 @@
       }
       try {
         activePhraseText = phraseText;
+        activeProjectText = (projectInput?.value || "عام").trim().slice(0, 80) || "عام";
         textInput.disabled = true;
         chunks = [];
         pendingBlob = null;
@@ -190,6 +246,8 @@
       const phrase = {
         id: crypto.randomUUID ? crypto.randomUUID() : "phrase-" + Date.now() + "-" + Math.random().toString(16).slice(2),
         text: activePhraseText,
+        project: activeProjectText,
+        sortOrder: phrases.length,
         blob: pendingBlob,
         mimeType: pendingBlob.type,
         createdAt: Date.now()
