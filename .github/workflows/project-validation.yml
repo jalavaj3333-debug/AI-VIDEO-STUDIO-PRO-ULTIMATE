@@ -5,9 +5,13 @@ on:
     branches:
       - main
       - automation-quality-checks
+      - dynamic-ai-video-script
+      - local-voice-phrase-bank
   pull_request:
     branches:
       - main
+      - fix-automation-media-route
+      - dynamic-ai-video-script
   workflow_dispatch:
 
 jobs:
@@ -31,6 +35,9 @@ jobs:
               echo "Checking: $file"
               node --experimental-default-type=module --check "$file"
             done
+      - name: Test automation Worker media route
+        run: |
+          node --experimental-default-type=module --test cloudflare-worker-automation/tests/*.test.mjs
       - name: Verify core project files
         run: |
           test -f index.html

@@ -504,6 +504,48 @@
                 </div>
             </div>
 
+            <div class="voice-profile-card" style="margin:18px 0;padding:18px;border:1px solid #b58b3b;border-radius:14px;background:#111;">
+                <h3>🎙️ MY VOICE — ملف صوتي خاص</h3>
+                <p>سجّل عيّنة من صوتك بجودة واضحة. التسجيل كيبقى فهاد الجهاز وما كيتصيفط حتى لخدمة خارجية. غادي نحتاجو نربطو لاحقاً بمحرك استنساخ صوت بموافقتك.</p>
+                <label for="voiceSampleLanguage">لغة العينة</label>
+                <select id="voiceSampleLanguage" style="display:block;width:100%;max-width:320px;margin:8px 0;padding:10px;border-radius:8px;">
+                    <option value="ary">الدارجة المغربية</option>
+                    <option value="ar">العربية</option>
+                    <option value="fr">Français</option>
+                    <option value="en">English</option>
+                </select>
+                <p id="voiceSamplePrompt">مرحبا، هذا تسجيل تجريبي بصوتي. أحب أن أقدم لكم اليوم موضوعاً جديداً ومفيداً.</p>
+                <label style="display:block;margin:10px 0;"><input id="voiceSampleConsent" type="checkbox"> كنأكد أن هاد التسجيل بصوتي، وباغي نسجلو ونحتافظ به محلياً فهاد الجهاز فقط.</label>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    <button id="voiceSampleStart" type="button">● بدء التسجيل</button>
+                    <button id="voiceSampleStop" type="button" disabled>■ إيقاف التسجيل</button>
+                    <button id="voiceSampleDownload" type="button" disabled>⬇ تحميل العينة</button>
+                    <button id="voiceSampleSave" type="button" disabled>💾 حفظ العينة فهاد الجهاز</button>
+                    <button id="voiceSampleDelete" type="button" disabled>🗑 مسح العينة المحفوظة</button>
+                </div>
+                <audio id="voiceSamplePreview" controls hidden style="width:100%;margin-top:12px;"></audio>
+                <p id="voiceSampleStatus" aria-live="polite">مازال ما تسجلات حتى عينة. التخزين محلي فهاد المتصفح فقط.</p>
+                <small>ملاحظة: هاد المرحلة كتسجل وتحضّر العينة فقط؛ مازال ما كاينش استنساخ صوت أو توليد تعليق تلقائي حتى نربطو محرك صوت مناسب.</small>
+            </div>
+
+
+            <div class="voice-phrase-bank" style="margin:18px 0;padding:18px;border:1px solid #b58b3b;border-radius:14px;background:#111;">
+                <h3>🗂️ مكتبة مقاطع صوتي — تخزين محلي</h3>
+                <p>سجّل جملاً قصيرة بصوتك واحفظها فهاد المتصفح. اختار المقاطع بالترتيب ثم أضفها لمسار الصوت بالتتابع. ما كاين حتى رفع للسيرفر.</p>
+                <label for="voicePhraseText">النص اللي غادي تقراه فالتسجيل</label>
+                <textarea id="voicePhraseText" rows="2" maxlength="500" style="display:block;width:100%;margin:8px 0;padding:10px;" placeholder="مثال: السلام عليكم، مرحبا بكم في فيديو جديد."></textarea>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    <button id="voicePhraseStart" type="button">● تسجيل الجملة</button>
+                    <button id="voicePhraseStop" type="button" disabled>■ إيقاف التسجيل</button>
+                    <button id="voicePhraseSave" type="button" disabled>💾 حفظ المقطع محلياً</button>
+                    <button id="voicePhraseAddSelected" type="button" disabled>＋ إضافة المحدد إلى Timeline بالتتابع</button>
+                </div>
+                <audio id="voicePhrasePreview" controls hidden style="width:100%;margin-top:10px;"></audio>
+                <p id="voicePhraseStatus" aria-live="polite">ما كاين حتى مقطع محفوظ. التسجيلات كتبقى محلية فهاد المتصفح.</p>
+                <div id="voicePhraseList"></div>
+                <small>مهم: هاد الميزة كتجمع تسجيلاتك الحقيقية فقط؛ ما كتولّدش كلاماً جديداً ولا كتستنسخ الصوت. خاصك تسجل كل جملة مسبقاً.</small>
+            </div>
+
             <div class="audio-studio-grid">
 
                 <!-- ORIGINAL VIDEO -->
@@ -817,9 +859,9 @@
 
                 <div class="video-plan-form" style="margin-top:20px;padding:16px;border:1px solid #b58b3b;border-radius:12px;">
                     <h3>🎬 إنشاء خطة فيديو جديدة</h3>
-                    <p>الفكرة الأولى: أسرار أعماق المحيط في 60 ثانية.</p>
+                    <p>دخل أي فكرة بغيتي، والذكاء الاصطناعي غادي يكتب ليها السيناريو والمشاهد المناسبة.</p>
                     <label for="videoPlanIdea">فكرة الفيديو</label>
-                    <textarea id="videoPlanIdea" rows="4" style="display:block;width:100%;margin:8px 0;padding:12px;border-radius:8px;" maxlength="2048">Explore the mysterious depths of the ocean: strange deep-sea creatures, darkness, extreme pressure, and discoveries scientists are still making. Create an engaging, factual 60-second short video.</textarea>
+                    <textarea id="videoPlanIdea" rows="4" style="display:block;width:100%;margin:8px 0;padding:12px;border-radius:8px;" maxlength="2048" placeholder="مثال: كيفاش النحل كيساهم فحماية البيئة؟"></textarea>
                     <button id="automationCreateVideoPlan" type="button" disabled>✨ إنشاء خطة الإنتاج السحابية</button>
                     <p><small>غادي نسجلو خطة الإنتاج فقط. توليد المشاهد والصوت وتركيب الفيديو والنشر كيتطلبو ربط خدمات خارجية.</small></p>
                 </div>
@@ -856,6 +898,8 @@
 <script src="ai-tools-hub.js"></script>
 <script src="prompt-builder.js"></script>
 <script src="automation-connector.js"></script>
+<script src="voice-profile.js"></script>
+<script src="voice-phrase-bank.js"></script>
 <script src="extract-audio.js"></script>
 
 </body>

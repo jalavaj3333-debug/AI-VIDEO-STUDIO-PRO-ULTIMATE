@@ -64,11 +64,185 @@
       addLine(item, "عدد المحاولات", task.attempts);
 
       if (task.result) {
-        const resultLine = document.createElement("small");
-        resultLine.textContent = "النتيجة: " + (
-          typeof task.result === "string" ? task.result : JSON.stringify(task.result)
-        );
-        item.appendChild(resultLine);
+        let resultData = task.result;
+        if (typeof resultData === "string") {
+          try {
+            resultData = JSON.parse(resultData);
+          } catch {
+            resultData = null;
+          }
+        }
+
+        if (resultData && typeof resultData === "object" &&
+            task.task_type === "video_plan") {
+          const details = document.createElement("details");
+          details.className = "automation-result-details";
+
+          const summary = document.createElement("summary");
+          summary.textContent = "عرض السيناريو والصور الناتجة";
+          details.appendChild(summary);
+
+          const generatedTitle = document.createElement("strong");
+          generatedTitle.textContent = resultData.generated_title || task.title || "خطة الفيديو";
+          details.appendChild(generatedTitle);
+
+          const imageCount = document.createElement("small");
+          imageCount.textContent = "الصور: " +
+            Number(resultData.generated_images || 0) + " / " +
+            Number(resultData.total_images || 0);
+          details.appendChild(imageCount);
+
+          if (Array.isArray(resultData.script)) {
+            const narrationControls = document.createElement("div");
+            narrationControls.className = "automation-narration-controls";
+            const playAllButton = document.createElement("button");
+            playAllButton.type = "button";
+            playAllButton.textContent = "▶ استمع لجميع المشاهد";
+            const stopAllButton = document.createElement("button");
+            stopAllButton.type = "button";
+            stopAllButton.textContent = "■ إيقاف القراءة";
+            stopAllButton.disabled = true;
+            playAllButton.addEventListener("click", () => {
+              if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) {
+                result.textContent = "المتصفح ما كيدعمش القراءة الصوتية. جرّب Chrome أو Edge.";
+                return;
+              }
+              const scenesToRead = resultData.script.map(scene => String(scene.narration || "").trim()).filter(Boolean);
+              if (!scenesToRead.length) return;
+              window.speechSynthesis.cancel();
+              const languageCode = String(resultData.language || "Arabic").toLowerCase();
+              const speechLanguage = languageCode.includes("darija") || languageCode.includes("moroccan") ? "ar-MA" :
+                languageCode.startsWith("fr") || languageCode.includes("french") ? "fr-FR" :
+                languageCode.startsWith("en") || languageCode.includes("english") ? "en-US" : "ar";
+              const voices = window.speechSynthesis.getVoices();
+              const voice = voices.find(item => item.lang && item.lang.toLowerCase().startsWith(speechLanguage.slice(0, 2)));
+              playAllButton.disabled = true;
+              stopAllButton.disabled = false;
+              let currentIndex = 0;
+              const speakNext = () => {
+                if (currentIndex >= scenesToRead.length) {
+                  playAllButton.disabled = false;
+                  stopAllButton.disabled = true;
+                  playAllButton.textContent = "↻ إعادة الاستماع لجميع المشاهد";
+                  return;
+                }
+                const utterance = new SpeechSynthesisUtterance(scenesToRead[currentIndex++]);
+                utterance.lang = speechLanguage;
+                if (voice) utterance.voice = voice;
+                utterance.onend = speakNext;
+                utterance.onerror = () => { playAllButton.disabled = false; stopAllButton.disabled = true; };
+                window.speechSynthesis.speak(utterance);
+              };
+              speakNext();
+            });
+            stopAllButton.addEventListener("click", () => {
+              if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+              playAllButton.disabled = false;
+              stopAllButton.disabled = true;
+            });
+            narrationControls.append(playAllButton, stopAllButton);
+            details.appendChild(narrationControls);
+            for (const [index, scene] of resultData.script.entries()) {
+              const sceneCard = document.createElement("div");
+              sceneCard.className = "automation-scene-preview";
+
+              const sceneHeading = document.createElement("strong");
+              sceneHeading.textContent = "المشهد " + (index + 1) +
+                (scene.time ? " · " + scene.time : "");
+              sceneCard.appendChild(sceneHeading);
+
+              const narration = document.createElement("p");
+              narration.textContent = scene.narration || "";
+              sceneCard.appendChild(narration);
+
+              const speakButton = document.createElement("button");
+              speakButton.type = "button";
+              speakButton.textContent = "▶ استمع للتعليق";
+              speakButton.className = "automation-speak-scene";
+              speakButton.addEventListener("click", () => {
+                if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) {
+                  result.textContent = "المتصفح ما كيدعمش القراءة الصوتية. جرّب Chrome أو Edge.";
+                  return;
+                }
+                const textToRead = String(scene.narration || "").trim();
+                if (!textToRead) return;
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(textToRead);
+                const languageCode = String(resultData.language || "Arabic").toLowerCase();
+                utterance.lang = languageCode.includes("darija") || languageCode.includes("moroccan")
+                  ? "ar-MA"
+                  : languageCode.startsWith("fr") || languageCode.includes("french")
+                    ? "fr-FR"
+                    : languageCode.startsWith("en") || languageCode.includes("english")
+                      ? "en-US"
+                      : "ar";
+                const availableVoices = window.speechSynthesis.getVoices();
+                const languagePrefix = utterance.lang.slice(0, 2);
+                const matchingVoice = availableVoices.find(voice =>
+                  voice.lang && voice.lang.toLowerCase().startsWith(languagePrefix)
+                );
+                if (matchingVoice) utterance.voice = matchingVoice;
+                window.speechSynthesis.speak(utterance);
+              });
+              sceneCard.appendChild(speakButton);
+
+              const visual = document.createElement("small");
+              visual.textContent = "الوصف البصري: " +
+                (scene.visual || scene.visual_prompt || "");
+              sceneCard.appendChild(visual);
+
+              details.appendChild(sceneCard);
+            }
+          }
+
+          if (Array.isArray(resultData.images)) {
+            const imageGrid = document.createElement("div");
+            imageGrid.className = "automation-generated-images";
+
+            for (const generatedImage of resultData.images) {
+              if (generatedImage.status !== "completed" || !generatedImage.media_url) continue;
+
+              let mediaUrl;
+              try {
+                mediaUrl = new URL(generatedImage.media_url);
+              } catch {
+                continue;
+              }
+
+              if (mediaUrl.protocol !== "https:" ||
+                  mediaUrl.hostname !== "ai-video-studio-automation.jalavaj-3333.workers.dev") {
+                continue;
+              }
+
+              const link = document.createElement("a");
+              link.href = mediaUrl.href;
+              link.target = "_blank";
+              link.rel = "noopener noreferrer";
+              link.title = "فتح صورة المشهد " + generatedImage.scene;
+
+              const image = document.createElement("img");
+              image.src = mediaUrl.href;
+              image.alt = "صورة المشهد " + generatedImage.scene;
+              image.loading = "lazy";
+              image.width = 144;
+              image.height = 256;
+
+              link.appendChild(image);
+              imageGrid.appendChild(link);
+            }
+
+            if (imageGrid.childElementCount) {
+              details.appendChild(imageGrid);
+            }
+          }
+
+          item.appendChild(details);
+        } else {
+          const resultLine = document.createElement("small");
+          resultLine.textContent = "النتيجة: " +
+            (typeof task.result === "string" ? task.result : JSON.stringify(task.result));
+          item.appendChild(resultLine);
+        }
       }
 
       if (task.error) {
@@ -217,25 +391,7 @@
     createVideoPlanButton.disabled = true;
     result.textContent = "جاري إعداد السيناريو والـStoryboard وتسجيل الخطة...";
 
-    // Built-in starter script and storyboard; no paid AI API required.
-    const script = [
-      { time: "0-6s", narration: "Beneath the ocean's surface lies a world almost untouched by sunlight.", visual: "A cinematic descent from bright ocean surface into deep blue darkness; vertical 9:16." },
-      { time: "6-13s", narration: "At a thousand meters, sunlight disappears—and the pressure becomes immense.", visual: "Depth meter fades into darkness; particles drift through the water." },
-      { time: "13-20s", narration: "Yet life thrives here, in forms that seem almost unreal.", visual: "Slow reveal of unusual deep-sea animals, documentary-style and scientifically plausible." },
-      { time: "20-27s", narration: "Some creatures make their own light, using bioluminescence to hunt or communicate.", visual: "A glowing jellyfish and tiny points of blue light in the dark." },
-      { time: "27-34s", narration: "Others survive near deep-sea vents, where hot, mineral-rich water escapes the seafloor.", visual: "Hydrothermal vents with mineral chimneys and surrounding marine life." },
-      { time: "34-41s", narration: "These ecosystems challenge what we thought life needed to survive.", visual: "Wide shot of a vent ecosystem; subtle labels: heat, minerals, darkness." },
-      { time: "41-48s", narration: "And much of the deep ocean remains unexplored.", visual: "Research submersible lights sweep across an immense, unknown seabed." },
-      { time: "48-55s", narration: "Every expedition can reveal species and secrets we have never seen before.", visual: "Submersible camera discovers a mysterious but realistic creature; no exaggerated fantasy." },
-      { time: "55-60s", narration: "The deepest ocean may hold discoveries that change our understanding of Earth.", visual: "Fade to black with glowing ocean particles and title: THE DEEP IS STILL UNKNOWN." }
-    ];
-    const storyboard = script.map((scene, index) => ({
-      scene: index + 1,
-      time: scene.time,
-      narration: scene.narration,
-      visual_prompt: scene.visual,
-      on_screen_text: index === 0 ? "SECRETS OF THE DEEP OCEAN" : ""
-    }));
+    // Let the cloud Workers AI model create a script and storyboard for this exact idea.
 
     try {
       const response = await api("/api/tasks", {
@@ -243,20 +399,17 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           task_type: "video_plan",
-          title: "60 SECONDS OF WONDER — Secrets of the Deep Ocean",
+          title: idea.slice(0, 180),
           payload: {
             idea,
-            series: "60 SECONDS OF WONDER",
-            language: "English",
+            language: "Arabic",
             duration_seconds: 60,
             aspect_ratio: "9:16",
             format: "short_video",
             platforms: ["youtube_shorts", "tiktok", "instagram_reels", "facebook_reels"],
             audience: "general_global_audience",
-            style: "cinematic_mystery_educational",
+            style: "cinematic_educational",
             factual_content: true,
-            script,
-            storyboard,
             require_user_approval_before_publishing: true
           }
         })
