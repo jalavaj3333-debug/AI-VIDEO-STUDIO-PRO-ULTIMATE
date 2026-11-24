@@ -66,7 +66,16 @@
 
     async function refresh() {
       phrases = (await dbAction("readonly", store => store.getAll())) || [];
-      phrases.sort((a, b) => (Number(a.sortOrder) || Number(a.createdAt) || 0) - (Number(b.sortOrder) || Number(b.createdAt) || 0));
+      const needsOrderMigration = phrases.some(phrase => !Number.isFinite(phrase.sortOrder));
+      if (needsOrderMigration) {
+        phrases.sort((a, b) => (Number(a.createdAt) || 0) - (Number(b.createdAt) || 0));
+        for (let index = 0; index < phrases.length; index += 1) {
+          phrases[index].sortOrder = index;
+          await dbAction("readwrite", store => store.put(phrases[index]));
+        }
+      } else {
+        phrases.sort((a, b) => a.sortOrder - b.sortOrder);
+      }
       render();
     }
 
