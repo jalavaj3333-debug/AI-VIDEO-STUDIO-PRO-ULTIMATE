@@ -520,6 +520,25 @@
                         <input id="puppetDuration" type="number" min="2" max="15" value="6">
                     </label>
                 </div>
+                <div class="puppet-rig-controls" style="margin:16px 0;padding:16px;border:1px solid #8a682d;border-radius:12px;background:#101010">
+                    <h3 style="margin:0 0 12px">⚙ ضبط هيكل الشخصية</h3>
+                    <div class="creator-controls">
+                        <label>حجم الشخصية: <output id="puppetRigScaleValue">100%</output>
+                            <input id="puppetRigScale" type="range" min="70" max="130" value="100" step="1">
+                        </label>
+                        <label>عرض الكتفين: <output id="puppetShoulderWidthValue">100%</output>
+                            <input id="puppetShoulderWidth" type="range" min="70" max="130" value="100" step="1">
+                        </label>
+                        <label>ارتفاع الكتفين: <output id="puppetShoulderHeightValue">0%</output>
+                            <input id="puppetShoulderHeight" type="range" min="-10" max="10" value="0" step="1">
+                        </label>
+                        <label>موضع الجسم عمودياً: <output id="puppetBodyOffsetValue">0%</output>
+                            <input id="puppetBodyOffset" type="range" min="-10" max="10" value="0" step="1">
+                        </label>
+                    </div>
+                    <button id="puppetRigReset" type="button" class="secondary-btn">↺ إعادة ضبط الهيكل</button>
+                    <p class="tool-status">هاد الإعدادات كتعاونك تضبط الطبقات يدوياً؛ ما كتكتاشفش المفاصل أو كتفصل الصورة تلقائياً.</p>
+                </div>
                 <div style="display:flex;gap:10px;flex-wrap:wrap;margin:14px 0">
                     <button id="puppetPreview" type="button">▶ معاينة الحركة</button>
                     <button id="puppetExport" type="button" disabled>🎬 تصدير WebM</button>
