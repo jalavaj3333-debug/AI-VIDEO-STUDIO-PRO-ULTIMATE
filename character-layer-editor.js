@@ -13,7 +13,7 @@
   let source = null, sourceUrl = null, drawing = false, last = null;
   let hasMarks = false;
   const say = value => { status.textContent = value; };
-  const targetIds = { body:"puppetBody", head:"puppetHead", leftArm:"puppetLeftArm", rightArm:"puppetRightArm" };
+  const targetIds = { body:"puppetBody", head:"puppetHead", leftArm:"puppetLeftArm", rightArm:"puppetRightArm", leftForearm:"puppetLeftForearm", rightForearm:"puppetRightForearm" };
   function dimensions() {
     if (!source) return;
     const scale = Math.min(1, 1600 / Math.max(source.naturalWidth, source.naturalHeight));
@@ -89,7 +89,7 @@
     out.drawImage(mask,0,0);
     output.toBlob(blob => {
       if (!blob) { say("تعذر إنشاء PNG."); return; }
-      const labels = {body:"body",head:"head",leftArm:"left-arm",rightArm:"right-arm"};
+      const labels = {body:"body",head:"head",leftArm:"left-arm",rightArm:"right-arm",leftForearm:"left-forearm",rightForearm:"right-forearm"};
       const file = new File([blob], "SMAILLY-"+labels[key]+".png", {type:"image/png"});
       try {
         const transfer = new DataTransfer(); transfer.items.add(file); input.files = transfer.files;
