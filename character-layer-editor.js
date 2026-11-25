@@ -75,6 +75,15 @@
   canvas.addEventListener("pointerup", stop);
   canvas.addEventListener("pointercancel", stop);
   canvas.addEventListener("lostpointercapture", stop);
+  $("layerUndoStroke").addEventListener("click", () => {
+    if (!undoState) return;
+    maskCtx.putImageData(undoState.image,0,0);
+    hasMarks = undoState.hasMarks;
+    undoState = null;
+    $("layerUndoStroke").disabled = true;
+    draw();
+    say("تراجعنا على آخر ضربة بالفرشاة.");
+  });
   $("layerClearMask").addEventListener("click", () => {
     if (!source) return;
     maskCtx.clearRect(0,0,mask.width,mask.height); hasMarks = false; undoState = null; $("layerUndoStroke").disabled = true; draw();
