@@ -21,7 +21,9 @@
     body: bodyInput,
     head: $("puppetHead"),
     leftArm: $("puppetLeftArm"),
-    rightArm: $("puppetRightArm")
+    rightArm: $("puppetRightArm"),
+    leftForearm: $("puppetLeftForearm"),
+    rightForearm: $("puppetRightForearm")
   };
   const parts = Object.create(null);
 
@@ -83,13 +85,15 @@
 
   // Arm source layers should be cropped to the arm, with the shoulder at the top-centre.
   function drawArm(image, x, y, maxWidth, maxHeight, angle) {
-    if (!image) return;
+    if (!image) return null;
     const size = fit(image, maxWidth, maxHeight);
     ctx.save();
     ctx.translate(x, y);
     ctx.rotate(angle);
     ctx.drawImage(image, -size.width / 2, 0, size.width, size.height);
+    const elbow = { x: x + Math.sin(angle) * size.height * .58, y: y + Math.cos(angle) * size.height * .58 };
     ctx.restore();
+    return elbow;
   }
 
   function drawBackground(image) {
@@ -114,6 +118,8 @@
     let headTilt = Math.sin(t * 1.35) * 0.025;
     let leftAngle = -0.06 + Math.sin(t * 1.8) * 0.025;
     let rightAngle = 0.06 - Math.sin(t * 1.8) * 0.025;
+    let leftElbow = 0.12 + Math.sin(t * 1.7) * 0.025;
+    let rightElbow = -0.12 - Math.sin(t * 1.7) * 0.025;
     let bob = Math.sin(t * 2.2) * 5;
 
     if (mode === "talk") {
@@ -121,11 +127,14 @@
       bob += Math.abs(Math.sin(t * 7)) * 3;
     } else if (mode === "wave") {
       rightAngle = -0.15 + Math.sin(t * 5.2) * 0.48;
+      rightElbow = -0.45 + Math.sin(t * 5.2 + .8) * .28;
       headTilt += Math.sin(t * 2.1) * 0.035;
     } else if (mode === "dance") {
       headTilt = Math.sin(t * 3.1) * 0.11;
       leftAngle = Math.sin(t * 3.2) * 0.22 - 0.08;
       rightAngle = -Math.sin(t * 3.2) * 0.22 + 0.08;
+      leftElbow = Math.sin(t * 3.2 + .6) * .24;
+      rightElbow = -Math.sin(t * 3.2 + .6) * .24;
       bob = Math.sin(t * 3.2) * 13;
       bodyScale = 1 + Math.sin(t * 3.2) * 0.018;
     }
@@ -145,9 +154,11 @@
     const shoulderY = canvas.height * .465 + bob;
     const armWidth = canvas.width * .255;
     const armHeight = canvas.height * .405;
-    drawArm(parts.leftArm?.image, canvas.width * .365, shoulderY, armWidth, armHeight, leftAngle);
+    const leftElbowPoint = drawArm(parts.leftArm?.image, canvas.width * .365, shoulderY, armWidth, armHeight, leftAngle);
+    if (leftElbowPoint) drawArm(parts.leftForearm?.image, leftElbowPoint.x, leftElbowPoint.y, armWidth * .78, armHeight * .58, leftAngle + leftElbow);
     drawCentered(parts.body?.image, canvas.width * .5, canvas.height * .69 + bob, canvas.width * .68, canvas.height * .66, bodyScale);
-    drawArm(parts.rightArm?.image, canvas.width * .635, shoulderY, armWidth, armHeight, rightAngle);
+    const rightElbowPoint = drawArm(parts.rightArm?.image, canvas.width * .635, shoulderY, armWidth, armHeight, rightAngle);
+    if (rightElbowPoint) drawArm(parts.rightForearm?.image, rightElbowPoint.x, rightElbowPoint.y, armWidth * .78, armHeight * .58, rightAngle + rightElbow);
     drawCentered(parts.head?.image, canvas.width * .5, canvas.height * .265 + bob * .45, canvas.width * .34, canvas.height * .30, 1, headTilt);
 
     // A restrained vignette adds a finished preview without modifying source layers.
