@@ -103,6 +103,13 @@
       }
     },"image/png");
   });
+  $("layerPartTarget").addEventListener("change", () => {
+    if (source) {
+      maskCtx.clearRect(0,0,mask.width,mask.height);
+      hasMarks = false; draw();
+      say("اختار الجزء الجديد ورسم التحديد ديالو؛ كل طبقة كتتحفظ بوحدها.");
+    }
+  });
   $("layerBrushSize").addEventListener("input", () => $("layerBrushValue").textContent = $("layerBrushSize").value+" px");
   window.addEventListener("beforeunload", () => { if(sourceUrl) URL.revokeObjectURL(sourceUrl); });
 })();
