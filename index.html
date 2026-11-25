@@ -446,6 +446,33 @@
 
 
 
+        <!-- SMAILLY LOCAL CHARACTER LAYER PREPARATION -->
+        <section class="section pro-creator" id="character-layer-editor">
+            <div class="section-heading"><div><h2>✂ SMAILLY CHARACTER LAYER PREP</h2><p>جهّز طبقات PNG شفافة من صورة واحدة، محلياً داخل المتصفح.</p></div></div>
+            <div class="creator-panel">
+                <p class="tool-status">حمّل صورة الشخصية، اختار الجزء، واستعمل الفرشاة لتحديد المنطقة. الفرشاة كتضيف التحديد والممحاة كتحيدو. هاد الأداة يدوية وما كتفصلش الأعضاء تلقائياً.</p>
+                <label for="layerSourceImage">الصورة الأصلية</label>
+                <input id="layerSourceImage" type="file" accept="image/png,image/jpeg,image/webp">
+                <div class="creator-controls">
+                    <label>الجزء اللي غادي نحفظو
+                        <select id="layerPartTarget"><option value="body">الجسم</option><option value="head">الرأس</option><option value="leftArm">الذراع الأيسر</option><option value="rightArm">الذراع الأيمن</option></select>
+                    </label>
+                    <label>طريقة التحديد
+                        <select id="layerBrushMode"><option value="paint">فرشاة التحديد</option><option value="erase">ممحاة التحديد</option></select>
+                    </label>
+                    <label>حجم الفرشاة: <span id="layerBrushValue">32 px</span>
+                        <input id="layerBrushSize" type="range" min="4" max="120" value="32">
+                    </label>
+                </div>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;margin:12px 0">
+                    <button id="layerClearMask" type="button">مسح التحديد</button>
+                    <button id="layerExportPart" type="button" disabled>حفظ وتحميل الطبقة للمحرّك</button>
+                </div>
+                <canvas id="layerEditorCanvas" width="720" height="900" aria-label="مساحة تحديد أجزاء الشخصية" style="width:min(100%,680px);max-height:70vh;object-fit:contain;touch-action:none;background:#171717;border:1px solid #a77b2e;border-radius:12px;display:block;margin:12px auto"></canvas>
+                <p id="layerEditorStatus" class="tool-status" aria-live="polite">حمّل صورة الشخصية للبدء.</p>
+            </div>
+        </section>
+
         <!-- SMAILLY LOCAL CHARACTER PUPPET STUDIO -->
         <section class="section pro-creator" id="character-puppet-studio">
             <div class="section-heading">
@@ -963,6 +990,7 @@
 <script src="auto-montage.js"></script>
 <script src="text-to-video.js"></script>
 <script src="image-to-video.js"></script>
+<script src="character-layer-editor.js"></script>
 <script src="character-puppet.js"></script>
 <script src="ai-tools-hub.js"></script>
 <script src="prompt-builder.js"></script>
