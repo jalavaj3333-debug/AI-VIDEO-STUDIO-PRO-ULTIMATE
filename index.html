@@ -446,6 +446,54 @@
 
 
 
+        <!-- SMAILLY LOCAL CHARACTER PUPPET STUDIO -->
+        <section class="section pro-creator" id="character-puppet-studio">
+            <div class="section-heading">
+                <div>
+                    <h2>✦ SMAILLY CHARACTER PUPPET STUDIO</h2>
+                    <p>محرك محلي لتركيب وتحريك الشخصية من طبقات PNG شفافة، بدون API أو خدمات خارجية.</p>
+                </div>
+            </div>
+            <div class="creator-panel">
+                <p class="tool-status">لنتيجة احترافية: حضّر الشخصية على شكل طبقات PNG بخلفية شفافة: الجسم، الرأس، والذراعان. هاد المحرك كيركب الطبقات ويحركها؛ ما كيقصّش الشخصية تلقائياً من صورة واحدة.</p>
+                <div class="creator-controls">
+                    <label>الخلفية (اختياري)
+                        <input id="puppetBackground" type="file" accept="image/png,image/webp,image/jpeg">
+                    </label>
+                    <label>طبقة الجسم (مطلوبة)
+                        <input id="puppetBody" type="file" accept="image/png,image/webp">
+                    </label>
+                    <label>طبقة الرأس (اختياري)
+                        <input id="puppetHead" type="file" accept="image/png,image/webp">
+                    </label>
+                    <label>الذراع الأيسر (اختياري)
+                        <input id="puppetLeftArm" type="file" accept="image/png,image/webp">
+                    </label>
+                    <label>الذراع الأيمن (اختياري)
+                        <input id="puppetRightArm" type="file" accept="image/png,image/webp">
+                    </label>
+                    <label>الحركة
+                        <select id="puppetMotion">
+                            <option value="idle">وقوف وتنفس طبيعي</option>
+                            <option value="talk">تفاعل أثناء الكلام</option>
+                            <option value="wave">تحية باليد</option>
+                            <option value="dance">حركة إيقاعية خفيفة</option>
+                        </select>
+                    </label>
+                    <label>مدة التصدير (ثانية)
+                        <input id="puppetDuration" type="number" min="2" max="15" value="6">
+                    </label>
+                </div>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;margin:14px 0">
+                    <button id="puppetPreview" type="button">▶ معاينة الحركة</button>
+                    <button id="puppetExport" type="button" disabled>🎬 تصدير WebM</button>
+                </div>
+                <canvas id="puppetCanvas" width="720" height="1280" style="width:min(100%,420px);aspect-ratio:9/16;background:#111;border-radius:14px;display:block;margin:12px auto"></canvas>
+                <p id="puppetStatus" class="tool-status" aria-live="polite">حمّل طبقة الجسم PNG للبدء.</p>
+                <a id="puppetDownload" hidden download="SMAILLY-CHARACTER-ANIMATION.webm">⬇ تحميل حركة الشخصية</a>
+            </div>
+        </section>
+
         <!-- VIDEO TRIMMER -->
         <section class="section" id="trim-editor">
             <div class="section-heading">
@@ -912,6 +960,7 @@
 <script src="auto-montage.js"></script>
 <script src="text-to-video.js"></script>
 <script src="image-to-video.js"></script>
+<script src="character-puppet.js"></script>
 <script src="ai-tools-hub.js"></script>
 <script src="prompt-builder.js"></script>
 <script src="automation-connector.js"></script>
