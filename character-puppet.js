@@ -24,6 +24,15 @@
     rightArm: $("puppetRightArm")
   };
   const parts = Object.create(null);
+
+  function applyAspectRatio() {
+    const ratio = $("puppetRatio")?.value || "9:16";
+    const sizes = ratio === "16:9" ? [1280, 720] : ratio === "1:1" ? [900, 900] : [720, 1280];
+    canvas.width = sizes[0];
+    canvas.height = sizes[1];
+    canvas.style.aspectRatio = ratio.replace(":", " / ");
+    render(performance.now() - startedAt);
+  }
   let raf = 0;
   let startedAt = performance.now();
   let recording = false;
@@ -248,7 +257,8 @@
   });
 
   $("puppetMotion")?.addEventListener("change", () => render(performance.now() - startedAt));
-  render(0);
+  $("puppetRatio")?.addEventListener("change", applyAspectRatio);
+  applyAspectRatio();
   window.addEventListener("beforeunload", () => {
     cancelAnimationFrame(raf);
     Object.keys(parts).forEach(disposePart);
