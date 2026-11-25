@@ -11,7 +11,7 @@
   const overlay = document.createElement("canvas");
   const overlayCtx = overlay.getContext("2d");
   let source = null, sourceUrl = null, drawing = false, last = null;
-  let hasMarks = false;
+  let hasMarks = false, undoState = null;
   const say = value => { status.textContent = value; };
   const targetIds = { body:"puppetBody", head:"puppetHead", leftArm:"puppetLeftArm", rightArm:"puppetRightArm", leftForearm:"puppetLeftForearm", rightForearm:"puppetRightForearm" };
   function dimensions() {
@@ -64,7 +64,7 @@
   });
   canvas.addEventListener("pointerdown", event => {
     if (!source) return;
-    drawing = true; last = null; canvas.setPointerCapture(event.pointerId); brush(event);
+    drawing = true; last = null;\n    undoState = { image: maskCtx.getImageData(0,0,mask.width,mask.height), hasMarks };\n    $("layerUndoStroke").disabled = false;\n    canvas.setPointerCapture(event.pointerId); brush(event);
   });
   canvas.addEventListener("pointermove", event => { if (drawing) brush(event); });
   const stop = () => { drawing = false; last = null; maskCtx.globalCompositeOperation = "source-over"; };
