@@ -46,4 +46,56 @@ jobs:
           test -f automation-connector.js
           test -f ffmpeg-editor.js
           test -f merge-editor.js
+          test -f auto-montage.js
+          test -f ffmpeg/worker.js
           echo "Core files are present."
+      - name: Validate video editor wiring
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+
+          const html = fs.readFileSync('index.html', 'utf8');
+          const ffmpeg = fs.readFileSync('ffmpeg-editor.js', 'utf8');
+          const merger = fs.readFileSync('merge-editor.js', 'utf8');
+          const montage = fs.readFileSync('auto-montage.js', 'utf8');
+
+          const requiredIds = [
+            'loadFFmpeg',
+            'mergeLoadFFmpeg',
+            'autoMontageRatio',
+            'smartAutoMontage'
+          ];
+
+          for (const id of requiredIds) {
+            if (!html.includes(`id="${id}"`)) {
+              throw new Error(`Missing required UI element: ${id}`);
+            }
+          }
+
+          const ffmpegScript = html.indexOf('src="ffmpeg-editor.js"');
+          const mergeScript = html.indexOf('src="merge-editor.js"');
+          const montageScript = html.indexOf('src="auto-montage.js"');
+
+          if (ffmpegScript < 0 || mergeScript < 0 || montageScript < 0) {
+            throw new Error('One or more video editor scripts are not included in index.html.');
+          }
+
+          if (!(ffmpegScript < mergeScript && ffmpegScript < montageScript)) {
+            throw new Error('FFmpeg editor must load before merger and Auto Montage.');
+          }
+
+          if (!ffmpeg.includes('window.ensureVideoFFmpeg = ensureVideoFFmpeg')) {
+            throw new Error('Shared FFmpeg loader is not exposed globally.');
+          }
+
+          for (const [name, source] of [['Video Merger', merger], ['Auto Montage', montage]]) {
+            if (!source.includes('window.ensureVideoFFmpeg')) {
+              throw new Error(`${name} does not use the shared FFmpeg loader.`);
+            }
+            if (!source.includes('window.videoFFmpegBusy')) {
+              throw new Error(`${name} is missing the shared FFmpeg busy lock.`);
+            }
+          }
+
+          console.log('Video editor wiring checks passed.');
+          NODE

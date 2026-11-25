@@ -8,6 +8,7 @@ const mergeDownload = document.getElementById("mergeDownload");
 let mergeFiles = [];
 let mergeOutputURL = null;
 let isMerging = false;
+window.videoFFmpegBusy ??= null;
 
 function getFFmpeg() {
     return window.videoFFmpegLoaded && window.videoFFmpeg
@@ -25,19 +26,29 @@ function setMergeProgress(value) {
 }
 
 const mergeLoadFFmpeg = document.getElementById("mergeLoadFFmpeg");
-const trimLoadFFmpeg = document.getElementById("loadFFmpeg");
 
-mergeLoadFFmpeg?.addEventListener("click", () => {
+mergeLoadFFmpeg?.addEventListener("click", async () => {
     if (window.videoFFmpegLoaded && window.videoFFmpeg) {
         setMergeStatus("✓ محرك FFmpeg جاهز للدمج.");
         return;
     }
-    if (!trimLoadFFmpeg) {
-        setMergeStatus("زر تحميل محرك FFmpeg غير موجود.");
+
+    if (typeof window.ensureVideoFFmpeg !== "function") {
+        setMergeStatus("خدمة تحميل محرك FFmpeg غير متاحة حالياً.");
         return;
     }
-    setMergeStatus("جاري تحميل محرك FFmpeg من أداة التقطيع...");
-    trimLoadFFmpeg.click();
+
+    mergeLoadFFmpeg.disabled = true;
+    setMergeStatus("جاري تحميل محرك FFmpeg تلقائياً...");
+
+    try {
+        await window.ensureVideoFFmpeg();
+        setMergeStatus("✓ محرك FFmpeg جاهز للدمج.");
+    } catch (error) {
+        setMergeStatus("تعذر تحميل محرك FFmpeg: " + (error?.message || String(error)));
+    } finally {
+        mergeLoadFFmpeg.disabled = false;
+    }
 });
 
 if (
@@ -78,20 +89,46 @@ if (
             return;
         }
 
-        const engine = getFFmpeg();
-
-        if (!engine) {
-            setMergeStatus(
-                "حمّل محرك FFmpeg أولاً من أداة التقطيع."
-            );
+        if (window.videoFFmpegBusy) {
+            setMergeStatus("محرك FFmpeg مشغول بأداة أخرى. انتظر حتى تنتهي العملية الحالية.");
             return;
         }
 
+        window.videoFFmpegBusy = "video-merger";
         isMerging = true;
         mergeButton.disabled = true;
         mergeInput.disabled = true;
         mergeDownload.hidden = true;
         setMergeProgress(0);
+
+        let engine = getFFmpeg();
+
+        if (!engine && typeof window.ensureVideoFFmpeg === "function") {
+            setMergeStatus("جاري تحميل محرك FFmpeg تلقائياً...");
+            try {
+                engine = await window.ensureVideoFFmpeg();
+            } catch (error) {
+                setMergeStatus("تعذر تحميل محرك FFmpeg: " + (error?.message || String(error)));
+                isMerging = false;
+                mergeButton.disabled = false;
+                mergeInput.disabled = false;
+                if (window.videoFFmpegBusy === "video-merger") {
+                    window.videoFFmpegBusy = null;
+                }
+                return;
+            }
+        }
+
+        if (!engine) {
+            setMergeStatus("محرك FFmpeg غير متاح. تأكد من تحميل أداة FFmpeg.");
+            isMerging = false;
+            mergeButton.disabled = false;
+            mergeInput.disabled = false;
+            if (window.videoFFmpegBusy === "video-merger") {
+                window.videoFFmpegBusy = null;
+            }
+            return;
+        }
 
         const inputNames = [];
         const outputName = "AI_STUDIO_MERGED.mp4";
@@ -239,6 +276,9 @@ if (
             mergeButton.disabled = false;
             mergeInput.disabled = false;
             isMerging = false;
+            if (window.videoFFmpegBusy === "video-merger") {
+                window.videoFFmpegBusy = null;
+            }
         }
     });
 }
