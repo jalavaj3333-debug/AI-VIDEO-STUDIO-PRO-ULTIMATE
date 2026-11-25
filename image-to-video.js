@@ -49,7 +49,7 @@
     });
   }
 
-  function drawCover(ctx, image, width, height, progress, motion) {
+  function drawCover(ctx, image, width, height, progress, motion, intensity = 0.55) {
     const base = Math.max(
       width / image.width,
       height / image.height
@@ -91,11 +91,39 @@
         moveY = Math.cos(progress * Math.PI * 2) * 0.018;
         break;
 
+      case "float":
+        zoom = 1.10 + Math.sin(progress * Math.PI * 2) * 0.035;
+        moveX = Math.sin(progress * Math.PI * 2) * 0.045;
+        moveY = Math.cos(progress * Math.PI * 2) * 0.035;
+        break;
+
+      case "handheld":
+        zoom = 1.12;
+        moveX = (Math.sin(progress * 37) * 0.012) + (Math.sin(progress * 11) * 0.012);
+        moveY = (Math.cos(progress * 31) * 0.010) + (Math.sin(progress * 13) * 0.008);
+        break;
+
+      case "orbit":
+        zoom = 1.14;
+        moveX = Math.sin(progress * Math.PI * 2) * 0.065;
+        moveY = Math.cos(progress * Math.PI * 2) * 0.035;
+        break;
+
+      case "pulse":
+        zoom = 1.08 + (Math.sin(progress * Math.PI * 4) * 0.045);
+        moveX = Math.sin(progress * Math.PI * 2) * 0.012;
+        break;
+
       case "zoom":
       default:
         zoom = 1 + progress * 0.20;
         break;
     }
+
+    const strength = Math.max(0, Math.min(1, Number(intensity) || 0));
+    zoom = 1 + (zoom - 1) * strength;
+    moveX *= strength;
+    moveY *= strength;
 
     const imageWidth = image.width * base * zoom;
     const imageHeight = image.height * base * zoom;
@@ -109,14 +137,14 @@
     ctx.drawImage(image, x, y, imageWidth, imageHeight);
   }
 
-  function drawScene(ctx, image, width, height, progress, motion, opacity = 1) {
+  function drawScene(ctx, image, width, height, progress, motion, opacity = 1, intensity = 0.55) {
     ctx.save();
 
     ctx.globalAlpha = opacity;
     ctx.fillStyle = "#050505";
     ctx.fillRect(0, 0, width, height);
 
-    drawCover(ctx, image, width, height, progress, motion);
+    drawCover(ctx, image, width, height, progress, motion, intensity);
 
     // Cinematic light and shadow
     const shade = ctx.createLinearGradient(0, 0, 0, height);
@@ -140,7 +168,10 @@
       "pan-left",
       "vertical",
       "diagonal",
-      "cinematic"
+      "cinematic",
+      "float",
+      "orbit",
+      "pulse"
     ];
 
     return movements[index % movements.length];
@@ -182,6 +213,8 @@
 
   // Add extra motion choices without changing index.html
   const motionSelect = $("imageMotion");
+  const intensityControl = $("imageMotionIntensity");
+  const getIntensity = () => Math.max(0, Math.min(1, Number(intensityControl?.value ?? 55) / 100));
 
   if (motionSelect) {
     const extraOptions = [
@@ -189,7 +222,11 @@
       ["pan-left", "تحريك من اليمين لليسار"],
       ["vertical", "تحريك عمودي"],
       ["diagonal", "حركة قطرية"],
-      ["cinematic", "حركة سينمائية ناعمة"]
+      ["cinematic", "حركة سينمائية ناعمة"],
+      ["float", "انسياب ناعم"],
+      ["handheld", "اهتزاز كاميرا خفيف"],
+      ["orbit", "حركة دائرية سينمائية"],
+      ["pulse", "نبض بصري هادئ"]
     ];
 
     extraOptions.forEach(([value, label]) => {
@@ -249,6 +286,7 @@
 
       const transitionDuration = Math.min(700, duration * 0.18);
       const selectedMotion = motionSelect?.value || "auto";
+      const motionIntensity = getIntensity();
 
       const canvas = document.createElement("canvas");
       canvas.width = width;
@@ -331,7 +369,8 @@
             height,
             progress,
             motion,
-            1
+            1,
+            motionIntensity
           );
 
           // Smooth crossfade between scenes
@@ -346,7 +385,8 @@
               height,
               Math.min(1, transitionProgress),
               getMotion(index + 1, selectedMotion),
-              transitionProgress
+              transitionProgress,
+              motionIntensity
             );
           }
 
@@ -381,7 +421,7 @@
       );
 
       setStatus(
-        `✅ تم إنشاء الفيديو بنجاح! ${files.length} مشهد بحركة سينمائية.`
+        `✅ اكتمل الفيديو: ${files.length} مشهد. محرك SMAILLY طبّق حركة كاميرا بقوة ${Math.round(motionIntensity * 100)}%.`
       );
 
     } catch (error) {
