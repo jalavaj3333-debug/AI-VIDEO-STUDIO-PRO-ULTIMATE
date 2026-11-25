@@ -55,7 +55,8 @@
     source = new Image();
     source.onload = () => {
       dimensions();
-      maskCtx.clearRect(0,0,mask.width,mask.height); hasMarks = false;
+      maskCtx.clearRect(0,0,mask.width,mask.height); hasMarks = false; undoState = null;
+      $("layerUndoStroke").disabled = true;
       $("layerExportPart").disabled = false;
       say("الصورة واجدة. اختار الجزء ورسم فوق المساحة اللي بغيتي تحتافظ بها.");
     };
@@ -64,7 +65,10 @@
   });
   canvas.addEventListener("pointerdown", event => {
     if (!source) return;
-    drawing = true; last = null;\n    undoState = { image: maskCtx.getImageData(0,0,mask.width,mask.height), hasMarks };\n    $("layerUndoStroke").disabled = false;\n    canvas.setPointerCapture(event.pointerId); brush(event);
+    drawing = true; last = null;
+    undoState = { image: maskCtx.getImageData(0,0,mask.width,mask.height), hasMarks };
+    $("layerUndoStroke").disabled = false;
+    canvas.setPointerCapture(event.pointerId); brush(event);
   });
   canvas.addEventListener("pointermove", event => { if (drawing) brush(event); });
   const stop = () => { drawing = false; last = null; maskCtx.globalCompositeOperation = "source-over"; };
@@ -73,7 +77,7 @@
   canvas.addEventListener("lostpointercapture", stop);
   $("layerClearMask").addEventListener("click", () => {
     if (!source) return;
-    maskCtx.clearRect(0,0,mask.width,mask.height); hasMarks = false; draw();
+    maskCtx.clearRect(0,0,mask.width,mask.height); hasMarks = false; undoState = null; $("layerUndoStroke").disabled = true; draw();
     say("تم مسح التحديد. تقدر تبدا من جديد.");
   });
   $("layerExportPart").addEventListener("click", () => {
@@ -82,11 +86,13 @@
     const input = $(targetIds[key]);
     if (!input) { say("حقل الطبقة غير موجود."); return; }
     const output = document.createElement("canvas");
-    output.width = canvas.width; output.height = canvas.height;
+    const exportScale = Math.min(1, 4096 / Math.max(source.naturalWidth, source.naturalHeight));
+    output.width = Math.max(1, Math.round(source.naturalWidth * exportScale));
+    output.height = Math.max(1, Math.round(source.naturalHeight * exportScale));
     const out = output.getContext("2d");
     out.drawImage(source,0,0,output.width,output.height);
     out.globalCompositeOperation = "destination-in";
-    out.drawImage(mask,0,0);
+    out.drawImage(mask,0,0,output.width,output.height);
     output.toBlob(blob => {
       if (!blob) { say("تعذر إنشاء PNG."); return; }
       const labels = {body:"body",head:"head",leftArm:"left-arm",rightArm:"right-arm",leftForearm:"left-forearm",rightForearm:"right-forearm"};
@@ -106,7 +112,7 @@
   $("layerPartTarget").addEventListener("change", () => {
     if (source) {
       maskCtx.clearRect(0,0,mask.width,mask.height);
-      hasMarks = false; draw();
+      hasMarks = false; undoState = null; $("layerUndoStroke").disabled = true; draw();
       say("اختار الجزء الجديد ورسم التحديد ديالو؛ كل طبقة كتتحفظ بوحدها.");
     }
   });
