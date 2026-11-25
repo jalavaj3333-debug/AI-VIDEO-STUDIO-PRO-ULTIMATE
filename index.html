@@ -409,14 +409,26 @@
                         <input id="imageSceneDuration" type="number" min="2" max="20" value="4">
                     </label>
 
-                    <label>الحركة
+                    <label>نمط الحركة
                         <select id="imageMotion">
+                            <option value="auto">تنويع تلقائي للمشاهد</option>
                             <option value="zoom">تقريب سينمائي</option>
                             <option value="pan">تحريك جانبي</option>
                             <option value="zoomout">إبعاد سينمائي</option>
+                            <option value="float">انسياب ناعم</option>
+                            <option value="handheld">اهتزاز كاميرا خفيف</option>
+                            <option value="orbit">حركة دائرية سينمائية</option>
+                            <option value="pulse">نبض بصري هادئ</option>
                         </select>
                     </label>
+                    <label>قوة الحركة
+                        <input id="imageMotionIntensity" type="range" min="0" max="100" value="55">
+                    </label>
                 </div>
+                <p class="tool-status" style="margin:8px 0 14px">
+                    SMAILLY AI MOTION ENGINE · المرحلة الأولى: تحريك الكاميرا والمشهد محلياً.
+                    تحريك جسم الشخصية بالذكاء الاصطناعي يحتاج نموذج فيديو منفصلاً.
+                </p>
 
                 <div class="ai-motion-note" style="margin:14px 0;padding:14px;border:1px solid rgba(212,175,55,.35);border-radius:12px;background:rgba(212,175,55,.06)">
                     <strong>✨ تحريك الشخصية بالذكاء الاصطناعي — تجربة Wan 2.2</strong>
@@ -433,6 +445,109 @@
         </section>
 
 
+
+        <!-- SMAILLY LOCAL CHARACTER LAYER PREPARATION -->
+        <section class="section pro-creator" id="character-layer-editor">
+            <div class="section-heading"><div><h2>✂ SMAILLY CHARACTER LAYER PREP</h2><p>جهّز طبقات PNG شفافة من صورة واحدة، محلياً داخل المتصفح.</p></div></div>
+            <div class="creator-panel">
+                <p class="tool-status">حمّل صورة الشخصية، اختار الجزء، واستعمل الفرشاة لتحديد المنطقة. الفرشاة كتضيف التحديد والممحاة كتحيدو. هاد الأداة يدوية وما كتفصلش الأعضاء تلقائياً.</p>
+                <label for="layerSourceImage">الصورة الأصلية</label>
+                <input id="layerSourceImage" type="file" accept="image/png,image/jpeg,image/webp">
+                <div class="creator-controls">
+                    <label>الجزء اللي غادي نحفظو
+                        <select id="layerPartTarget"><option value="body">الجسم</option><option value="head">الرأس</option><option value="leftArm">الذراع الأيسر</option><option value="rightArm">الذراع الأيمن</option><option value="leftForearm">الساعد الأيسر</option><option value="rightForearm">الساعد الأيمن</option></select>
+                    </label>
+                    <label>طريقة التحديد
+                        <select id="layerBrushMode"><option value="paint">فرشاة التحديد</option><option value="erase">ممحاة التحديد</option></select>
+                    </label>
+                    <label>حجم الفرشاة: <span id="layerBrushValue">32 px</span>
+                        <input id="layerBrushSize" type="range" min="4" max="120" value="32">
+                    </label>
+                </div>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;margin:12px 0">
+                    <button id="layerUndoStroke" type="button" disabled>↶ تراجع عن آخر ضربة</button>\n                    <button id="layerClearMask" type="button">مسح التحديد</button>
+                    <button id="layerExportPart" type="button" disabled>حفظ وتحميل الطبقة للمحرّك</button>
+                </div>
+                <canvas id="layerEditorCanvas" width="720" height="900" aria-label="مساحة تحديد أجزاء الشخصية" style="width:min(100%,680px);max-height:70vh;object-fit:contain;touch-action:none;background:#171717;border:1px solid #a77b2e;border-radius:12px;display:block;margin:12px auto"></canvas>
+                <p id="layerEditorStatus" class="tool-status" aria-live="polite">حمّل صورة الشخصية للبدء.</p>
+            </div>
+        </section>
+
+        <!-- SMAILLY LOCAL CHARACTER PUPPET STUDIO -->
+        <section class="section pro-creator" id="character-puppet-studio">
+            <div class="section-heading">
+                <div>
+                    <h2>✦ SMAILLY CHARACTER PUPPET STUDIO</h2>
+                    <p>محرك محلي لتركيب وتحريك الشخصية من طبقات PNG شفافة، بدون API أو خدمات خارجية.</p>
+                </div>
+            </div>
+            <div class="creator-panel">
+                <p class="tool-status">لنتيجة احترافية: حضّر الشخصية على شكل طبقات PNG بخلفية شفافة: الجسم، الرأس، والذراعان. هاد المحرك كيركب الطبقات ويحركها؛ ما كيقصّش الشخصية تلقائياً من صورة واحدة.</p>
+                <div class="creator-controls">
+                    <label>الخلفية (اختياري)
+                        <input id="puppetBackground" type="file" accept="image/png,image/webp,image/jpeg">
+                    </label>
+                    <label>طبقة الجسم (مطلوبة)
+                        <input id="puppetBody" type="file" accept="image/png,image/webp">
+                    </label>
+                    <label>طبقة الرأس (اختياري)
+                        <input id="puppetHead" type="file" accept="image/png,image/webp">
+                    </label>
+                    <label>الذراع الأيسر (اختياري)
+                        <input id="puppetLeftArm" type="file" accept="image/png,image/webp">
+                    </label>
+                    <label>الذراع الأيمن (اختياري)
+                        <input id="puppetRightArm" type="file" accept="image/png,image/webp">
+                    </label>
+                    <label>الساعد الأيسر (اختياري، للمفصل)
+                        <input id="puppetLeftForearm" type="file" accept="image/png,image/webp">
+                    </label>
+                    <label>الساعد الأيمن (اختياري، للمفصل)
+                        <input id="puppetRightForearm" type="file" accept="image/png,image/webp">
+                    </label>
+                    <label>الحركة
+                        <select id="puppetMotion">
+                            <option value="idle">وقوف وتنفس طبيعي</option>
+                            <option value="talk">تفاعل أثناء الكلام</option>
+                            <option value="wave">تحية باليد</option>
+                            <option value="dance">حركة إيقاعية خفيفة</option>
+                        </select>
+                    </label>
+                    <label>مقاس الفيديو
+                        <select id="puppetRatio"><option value="9:16">عمودي 9:16</option><option value="16:9">أفقي 16:9</option><option value="1:1">مربع 1:1</option></select>
+                    </label>
+                    <label>مدة التصدير (ثانية)
+                        <input id="puppetDuration" type="number" min="2" max="15" value="6">
+                    </label>
+                </div>
+                <div class="puppet-rig-controls" style="margin:16px 0;padding:16px;border:1px solid #8a682d;border-radius:12px;background:#101010">
+                    <h3 style="margin:0 0 12px">⚙ ضبط هيكل الشخصية</h3>
+                    <div class="creator-controls">
+                        <label>حجم الشخصية: <output id="puppetRigScaleValue">100%</output>
+                            <input id="puppetRigScale" type="range" min="70" max="130" value="100" step="1">
+                        </label>
+                        <label>عرض الكتفين: <output id="puppetShoulderWidthValue">100%</output>
+                            <input id="puppetShoulderWidth" type="range" min="70" max="130" value="100" step="1">
+                        </label>
+                        <label>ارتفاع الكتفين: <output id="puppetShoulderHeightValue">0%</output>
+                            <input id="puppetShoulderHeight" type="range" min="-10" max="10" value="0" step="1">
+                        </label>
+                        <label>موضع الجسم عمودياً: <output id="puppetBodyOffsetValue">0%</output>
+                            <input id="puppetBodyOffset" type="range" min="-10" max="10" value="0" step="1">
+                        </label>
+                    </div>
+                    <button id="puppetRigReset" type="button" class="secondary-btn">↺ إعادة ضبط الهيكل</button>
+                    <p class="tool-status">هاد الإعدادات كتعاونك تضبط الطبقات يدوياً؛ ما كتكتاشفش المفاصل أو كتفصل الصورة تلقائياً.</p>
+                </div>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;margin:14px 0">
+                    <button id="puppetPreview" type="button">▶ معاينة الحركة</button>
+                    <button id="puppetExport" type="button" disabled>🎬 تصدير WebM</button>
+                </div>
+                <canvas id="puppetCanvas" width="720" height="1280" style="width:min(100%,420px);aspect-ratio:9/16;background:#111;border-radius:14px;display:block;margin:12px auto"></canvas>
+                <p id="puppetStatus" class="tool-status" aria-live="polite">حمّل طبقة الجسم PNG للبدء.</p>
+                <a id="puppetDownload" hidden download="SMAILLY-CHARACTER-ANIMATION.webm">⬇ تحميل حركة الشخصية</a>
+            </div>
+        </section>
 
         <!-- VIDEO TRIMMER -->
         <section class="section" id="trim-editor">
@@ -900,6 +1015,8 @@
 <script src="auto-montage.js"></script>
 <script src="text-to-video.js"></script>
 <script src="image-to-video.js"></script>
+<script src="character-layer-editor.js"></script>
+<script src="character-puppet.js"></script>
 <script src="ai-tools-hub.js"></script>
 <script src="prompt-builder.js"></script>
 <script src="automation-connector.js"></script>
