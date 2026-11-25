@@ -409,14 +409,26 @@
                         <input id="imageSceneDuration" type="number" min="2" max="20" value="4">
                     </label>
 
-                    <label>الحركة
+                    <label>نمط الحركة
                         <select id="imageMotion">
+                            <option value="auto">تنويع تلقائي للمشاهد</option>
                             <option value="zoom">تقريب سينمائي</option>
                             <option value="pan">تحريك جانبي</option>
                             <option value="zoomout">إبعاد سينمائي</option>
+                            <option value="float">انسياب ناعم</option>
+                            <option value="handheld">اهتزاز كاميرا خفيف</option>
+                            <option value="orbit">حركة دائرية سينمائية</option>
+                            <option value="pulse">نبض بصري هادئ</option>
                         </select>
                     </label>
+                    <label>قوة الحركة
+                        <input id="imageMotionIntensity" type="range" min="0" max="100" value="55">
+                    </label>
                 </div>
+                <p class="tool-status" style="margin:8px 0 14px">
+                    SMAILLY AI MOTION ENGINE · المرحلة الأولى: تحريك الكاميرا والمشهد محلياً.
+                    تحريك جسم الشخصية بالذكاء الاصطناعي يحتاج نموذج فيديو منفصلاً.
+                </p>
 
                 <div class="ai-motion-note" style="margin:14px 0;padding:14px;border:1px solid rgba(212,175,55,.35);border-radius:12px;background:rgba(212,175,55,.06)">
                     <strong>✨ تحريك الشخصية بالذكاء الاصطناعي — تجربة Wan 2.2</strong>
