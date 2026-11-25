@@ -763,51 +763,51 @@
     ctx.fillStyle = overlay;
     ctx.fillRect(0, 0, width, height);
 
-    ctx.textAlign = 'center';
-    ctx.direction = 'rtl';
-    ctx.fillStyle = '#fff';
+    if ($('showVideoSubtitles')?.checked) {
+      ctx.textAlign = 'center';
+      ctx.direction = 'rtl';
+      ctx.fillStyle = '#fff';
 
-    ctx.font =
-      `700 ${Math.max(28, Math.round(width * 0.04))}px Cairo, sans-serif`;
+      const subtitleText = String(scene.text || '')
+        .replace(/^\\s*#{1,6}\\s*/gm, '')
+        .replace(/\\*\\*(.*?)\\*\\*/g, '$1')
+        .replace(/^\\s*(?:الصورة|التعليق الصوتي|التعليق الصوتى|الوصف)\\s*[:：]\\s*/gim, '')
+        .replace(/^\\s*(?:المشهد|مشهد)\\s*[0-9٠-٩]+\\s*[-—:]?\\s*/gm, '')
+        .replace(/[`*_]/g, '')
+        .trim();
 
-    ctx.shadowColor = '#000';
-    ctx.shadowBlur = 14;
+      ctx.font =
+        `700 ${Math.max(28, Math.round(width * 0.04))}px Cairo, sans-serif`;
+      ctx.shadowColor = '#000';
+      ctx.shadowBlur = 14;
 
-    const words = scene.text.split(/\s+/);
-    const rows = [];
-    let row = '';
+      const words = subtitleText.split(/\\s+/);
+      const rows = [];
+      let row = '';
 
-    for (const word of words) {
-      const test = row ? row + ' ' + word : word;
-
-      if (
-        ctx.measureText(test).width > width * 0.82 &&
-        row
-      ) {
-        rows.push(row);
-        row = word;
-      } else {
-        row = test;
+      for (const word of words) {
+        const test = row ? row + ' ' + word : word;
+        if (ctx.measureText(test).width > width * 0.82 && row) {
+          rows.push(row);
+          row = word;
+        } else {
+          row = test;
+        }
       }
+
+      if (row) rows.push(row);
+
+      const lineHeight = Math.max(38, width * 0.055);
+      const start =
+        height * 0.70 -
+        (Math.min(rows.length, 5) * lineHeight) / 2;
+
+      rows.slice(0, 5).forEach((line, i) => {
+        ctx.fillText(line, width / 2, start + i * lineHeight);
+      });
+
+      ctx.shadowBlur = 0;
     }
-
-    if (row) rows.push(row);
-
-    const lineHeight = Math.max(38, width * 0.055);
-
-    const start =
-      height * 0.70 -
-      (Math.min(rows.length, 5) * lineHeight) / 2;
-
-    rows.slice(0, 5).forEach((text, i) => {
-      ctx.fillText(
-        text,
-        width / 2,
-        start + i * lineHeight
-      );
-    });
-
-    ctx.shadowBlur = 0;
     ctx.fillStyle = '#e7c77f';
 
     ctx.font =
