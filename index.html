@@ -455,7 +455,7 @@
                 <input id="layerSourceImage" type="file" accept="image/png,image/jpeg,image/webp">
                 <div class="creator-controls">
                     <label>الجزء اللي غادي نحفظو
-                        <select id="layerPartTarget"><option value="body">الجسم</option><option value="head">الرأس</option><option value="leftArm">الذراع الأيسر</option><option value="rightArm">الذراع الأيمن</option></select>
+                        <select id="layerPartTarget"><option value="body">الجسم</option><option value="head">الرأس</option><option value="leftArm">الذراع الأيسر</option><option value="rightArm">الذراع الأيمن</option><option value="leftForearm">الساعد الأيسر</option><option value="rightForearm">الساعد الأيمن</option></select>
                     </label>
                     <label>طريقة التحديد
                         <select id="layerBrushMode"><option value="paint">فرشاة التحديد</option><option value="erase">ممحاة التحديد</option></select>
@@ -498,6 +498,12 @@
                     </label>
                     <label>الذراع الأيمن (اختياري)
                         <input id="puppetRightArm" type="file" accept="image/png,image/webp">
+                    </label>
+                    <label>الساعد الأيسر (اختياري، للمفصل)
+                        <input id="puppetLeftForearm" type="file" accept="image/png,image/webp">
+                    </label>
+                    <label>الساعد الأيمن (اختياري، للمفصل)
+                        <input id="puppetRightForearm" type="file" accept="image/png,image/webp">
                     </label>
                     <label>الحركة
                         <select id="puppetMotion">
