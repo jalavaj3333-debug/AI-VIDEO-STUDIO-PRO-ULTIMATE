@@ -151,15 +151,20 @@
 
     // Layer order: rear arm, torso, foreground arm, then head.
     // Arm PNGs should have the shoulder pivot at the top-centre of the image.
-    const shoulderY = canvas.height * .465 + bob;
-    const armWidth = canvas.width * .255;
-    const armHeight = canvas.height * .405;
-    const leftElbowPoint = drawArm(parts.leftArm?.image, canvas.width * .365, shoulderY, armWidth, armHeight, leftAngle);
+    const rigScale = Math.max(.7, Math.min(1.3, (Number($("puppetRigScale")?.value) || 100) / 100));
+    const shoulderWidth = Math.max(.7, Math.min(1.3, (Number($("puppetShoulderWidth")?.value) || 100) / 100));
+    const shoulderHeight = (Number($("puppetShoulderHeight")?.value) || 0) / 100;
+    const bodyOffset = (Number($("puppetBodyOffset")?.value) || 0) / 100;
+    const shoulderY = canvas.height * (.465 + shoulderHeight * .1) + bob + bodyOffset * canvas.height * .35;
+    const shoulderSpread = canvas.width * .135 * shoulderWidth;
+    const armWidth = canvas.width * .255 * rigScale;
+    const armHeight = canvas.height * .405 * rigScale;
+    const leftElbowPoint = drawArm(parts.leftArm?.image, canvas.width * .5 - shoulderSpread, shoulderY, armWidth, armHeight, leftAngle);
     if (leftElbowPoint) drawArm(parts.leftForearm?.image, leftElbowPoint.x, leftElbowPoint.y, armWidth * .78, armHeight * .58, leftAngle + leftElbow);
-    drawCentered(parts.body?.image, canvas.width * .5, canvas.height * .69 + bob, canvas.width * .68, canvas.height * .66, bodyScale);
-    const rightElbowPoint = drawArm(parts.rightArm?.image, canvas.width * .635, shoulderY, armWidth, armHeight, rightAngle);
+    drawCentered(parts.body?.image, canvas.width * .5, canvas.height * (.69 + bodyOffset * .65) + bob, canvas.width * .68 * rigScale, canvas.height * .66 * rigScale, bodyScale);
+    const rightElbowPoint = drawArm(parts.rightArm?.image, canvas.width * .5 + shoulderSpread, shoulderY, armWidth, armHeight, rightAngle);
     if (rightElbowPoint) drawArm(parts.rightForearm?.image, rightElbowPoint.x, rightElbowPoint.y, armWidth * .78, armHeight * .58, rightAngle + rightElbow);
-    drawCentered(parts.head?.image, canvas.width * .5, canvas.height * .265 + bob * .45, canvas.width * .34, canvas.height * .30, 1, headTilt);
+    drawCentered(parts.head?.image, canvas.width * .5, canvas.height * (.265 + bodyOffset * .35) + bob * .45, canvas.width * .34 * rigScale, canvas.height * .30 * rigScale, 1, headTilt);
 
     // A restrained vignette adds a finished preview without modifying source layers.
     const vignette = ctx.createRadialGradient(
@@ -274,6 +279,35 @@
 
   $("puppetMotion")?.addEventListener("change", () => render(performance.now() - startedAt));
   $("puppetRatio")?.addEventListener("change", applyAspectRatio);
+
+  const rigControls = [
+    ["puppetRigScale", "puppetRigScaleValue", value => value + "%"],
+    ["puppetShoulderWidth", "puppetShoulderWidthValue", value => value + "%"],
+    ["puppetShoulderHeight", "puppetShoulderHeightValue", value => (value > 0 ? "+" : "") + value + "%"],
+    ["puppetBodyOffset", "puppetBodyOffsetValue", value => (value > 0 ? "+" : "") + value + "%"]
+  ];
+  rigControls.forEach(([inputId, outputId, format]) => {
+    const input = $(inputId);
+    const output = $(outputId);
+    if (!input || !output) return;
+    const update = () => {
+      output.textContent = format(Number(input.value));
+      render(performance.now() - startedAt);
+    };
+    input.addEventListener("input", update);
+    update();
+  });
+  $("puppetRigReset")?.addEventListener("click", () => {
+    const defaults = { puppetRigScale: 100, puppetShoulderWidth: 100, puppetShoulderHeight: 0, puppetBodyOffset: 0 };
+    Object.entries(defaults).forEach(([id, value]) => {
+      const input = $(id);
+      if (input) {
+        input.value = String(value);
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+      }
+    });
+    say("رجعنا إعدادات هيكل الشخصية للقيم الأصلية.");
+  });
   applyAspectRatio();
   window.addEventListener("beforeunload", () => {
     cancelAnimationFrame(raf);
