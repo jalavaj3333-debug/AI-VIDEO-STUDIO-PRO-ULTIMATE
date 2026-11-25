@@ -140,9 +140,14 @@
     ctx.fill();
     ctx.restore();
 
-    drawArm(parts.leftArm?.image, canvas.width * .32, canvas.height * .47 + bob, canvas.width * .28, canvas.height * .42, leftAngle);
-    drawArm(parts.rightArm?.image, canvas.width * .68, canvas.height * .47 + bob, canvas.width * .28, canvas.height * .42, rightAngle);
+    // Layer order: rear arm, torso, foreground arm, then head.
+    // Arm PNGs should have the shoulder pivot at the top-centre of the image.
+    const shoulderY = canvas.height * .465 + bob;
+    const armWidth = canvas.width * .255;
+    const armHeight = canvas.height * .405;
+    drawArm(parts.leftArm?.image, canvas.width * .365, shoulderY, armWidth, armHeight, leftAngle);
     drawCentered(parts.body?.image, canvas.width * .5, canvas.height * .69 + bob, canvas.width * .68, canvas.height * .66, bodyScale);
+    drawArm(parts.rightArm?.image, canvas.width * .635, shoulderY, armWidth, armHeight, rightAngle);
     drawCentered(parts.head?.image, canvas.width * .5, canvas.height * .265 + bob * .45, canvas.width * .34, canvas.height * .30, 1, headTilt);
 
     // A restrained vignette adds a finished preview without modifying source layers.
